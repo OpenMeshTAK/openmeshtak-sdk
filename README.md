@@ -93,21 +93,26 @@ Before the first release:
   `NPM_TOKEN` repository secret, complete the first release, configure trusted publishing and then
   remove the secret.
 
-Prepare and dispatch the current version (including the first `0.1.0` release):
+Prepare a later version and regenerate the committed version module:
 
 ```powershell
-./release.ps1
+pnpm version:set -- 0.1.1
+pnpm generate
+pnpm check
 ```
 
-Prepare a later version, commit it, create its annotated tag and push both after confirmation:
+Commit the version change, create an annotated tag matching `package.json` and push it:
 
 ```powershell
-./release.ps1 -Version 0.1.1
+git commit -am "chore(release): 0.1.1"
+git tag -a v0.1.1 -m "OpenMeshTak SDK 0.1.1"
+git push origin main
+git push origin v0.1.1
 ```
 
-The script refuses dirty trees, non-`main` branches, unexpected remotes, an out-of-sync `main` and
-duplicate tags. Publishing itself happens only in GitHub Actions after the pushed tag passes all
-checks.
+For the first `0.1.0` release, create and push only the matching annotated tag after `main` is
+published. The workflow refuses mismatched tags or version metadata. Publishing happens only after
+the pushed tag passes all checks.
 
 ## License
 
