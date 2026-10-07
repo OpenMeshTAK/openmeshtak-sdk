@@ -23,7 +23,7 @@ export interface OpenMeshTakClientOptions {
   /** Machine credential. A provider is evaluated immediately before every request. */
   apiKey?: ApiKeyProvider;
   /** Browser cookie mode. Defaults to `same-origin`. */
-  credentials?: RequestCredentials;
+  credentials?: RequestInit["credentials"];
   /** Fetch implementation for runtimes or tests. */
   fetch?: typeof globalThis.fetch;
 }
@@ -53,7 +53,11 @@ function normalizeBaseUrl(input: string): string {
 }
 
 async function resolveApiKey(provider: ApiKeyProvider): Promise<string> {
-  const value = typeof provider === "function" ? await provider() : provider;
+  // JavaScript callers can bypass the type, so check the runtime value before using it.
+  const value: unknown = typeof provider === "function" ? await provider() : provider;
+  if (typeof value !== "string" || value === "") {
+    throw new TypeError("The API key provider returned no OpenMeshTak API key.");
+  }
   if (!value.startsWith("omtk_ak_") || value.length <= "omtk_ak_".length) {
     throw new TypeError("The API key provider returned an invalid OpenMeshTak API key.");
   }

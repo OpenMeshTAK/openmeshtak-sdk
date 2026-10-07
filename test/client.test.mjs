@@ -121,6 +121,15 @@ test("rejects credentials in the base URL and malformed API keys", async () => {
     fetch: async () => jsonResponse(event),
   });
   await assert.rejects(client.getEvent(event.id), /invalid OpenMeshTak API key/);
+
+  for (const apiKey of [() => "", () => undefined]) {
+    const missingKeyClient = createOpenMeshTakClient({
+      baseUrl: "https://example.test/api/v1",
+      apiKey,
+      fetch: async () => jsonResponse(event),
+    });
+    await assert.rejects(missingKeyClient.getEvent(event.id), /returned no OpenMeshTak API key/);
+  }
 });
 
 test("declares the Core API compatibility range", () => {
