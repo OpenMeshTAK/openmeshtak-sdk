@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createOpenMeshTakClient, OpenMeshTakApiError, SUPPORTED_API_VERSION_RANGE } from "../dist/index.js";
+import {
+  createOpenMeshTakClient,
+  OPENAPI_SOURCE_VERSION,
+  OpenMeshTakApiError,
+  SDK_VERSION,
+  SUPPORTED_API_VERSION_RANGE,
+} from "../dist/index.js";
 
 const event = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -118,5 +124,7 @@ test("rejects credentials in the base URL and malformed API keys", async () => {
 });
 
 test("declares the Core API compatibility range", () => {
+  assert.equal(SDK_VERSION, "0.1.0");
   assert.equal(SUPPORTED_API_VERSION_RANGE, ">=0.1.9 <0.2.0");
+  assert.equal(OPENAPI_SOURCE_VERSION, "0.1.9");
 });

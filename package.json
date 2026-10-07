@@ -14,7 +14,11 @@
     "apiVersionRange": ">=0.1.9 <0.2.0",
     "openApiVersion": "0.1.9"
   },
-  "files": ["dist", "LICENSE", "README.md"],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -30,13 +34,16 @@
   "scripts": {
     "api:generate": "openapi-typescript openapi/openapi.json --output src/generated/schema.ts",
     "api:sync": "node scripts/sync-openapi.mjs",
+    "generate": "pnpm api:generate && node scripts/write-version-module.mjs",
     "clean": "node scripts/clean.mjs",
-    "build": "pnpm clean && pnpm api:generate && tsc -p tsconfig.build.json",
-    "typecheck": "pnpm api:generate && tsc --noEmit",
+    "build": "pnpm clean && pnpm generate && tsc -p tsconfig.build.json",
+    "typecheck": "pnpm generate && tsc --noEmit",
     "test": "pnpm build && node --test",
     "license:check": "node scripts/check-licenses.mjs",
     "release:notices": "node scripts/write-release-notices.mjs",
-    "check": "pnpm typecheck && pnpm test && pnpm license:check",
+    "version:check": "node scripts/check-version.mjs",
+    "version:set": "node scripts/set-version.mjs",
+    "check": "pnpm version:check && pnpm typecheck && pnpm test && pnpm license:check",
     "prepack": "pnpm check && pnpm release:notices"
   },
   "dependencies": {
@@ -52,7 +59,14 @@
     "url": "git+https://github.com/OpenMeshTAK/openmeshtak-sdk.git"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
   },
-  "keywords": ["openmeshtak", "tak", "meshtastic", "openapi"]
+  "keywords": [
+    "openmeshtak",
+    "tak",
+    "meshtastic",
+    "openapi"
+  ]
 }

@@ -15,6 +15,4 @@ export {
   type ResolvedProfile,
 } from "./client.js";
 export { OpenMeshTakApiError, type ProblemDetails } from "./errors.js";
-
-/** OpenMeshTak Core API versions supported by this SDK release. */
-export const SUPPORTED_API_VERSION_RANGE = ">=0.1.9 <0.2.0" as const;
+export { OPENAPI_SOURCE_VERSION, SDK_VERSION, SUPPORTED_API_VERSION_RANGE } from "./version.js";

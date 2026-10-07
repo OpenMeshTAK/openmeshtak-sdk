@@ -39,7 +39,7 @@ jobs:
         run: pnpm check
 
       - name: Verify generated client is committed
-        run: git diff --exit-code -- src/generated
+        run: git diff --exit-code -- src/generated src/version.ts
 
       - name: Verify release metadata
         run: pnpm release:notices

@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const sourcePath = resolve(process.argv[2] ?? "../openmeshtak/openapi/openapi.json");
+const [sourceArgument] = process.argv.slice(2).filter((argument) => argument !== "--");
+const sourcePath = resolve(sourceArgument ?? "../openmeshtak/openapi/openapi.json");
 const bytes = readFileSync(sourcePath);
 const document = JSON.parse(bytes.toString("utf8"));
 const version = document?.info?.version;
@@ -15,6 +16,9 @@ if (typeof document.openapi !== "string" || !document.openapi.startsWith("3.")) 
 }
 
 const digest = createHash("sha256").update(bytes).digest("hex");
+const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+packageJson.openmeshtak.openApiVersion = version;
+
 writeFileSync("openapi/openapi.json", bytes);
 writeFileSync(
   "openapi/source.json",
@@ -29,5 +33,6 @@ writeFileSync(
     2,
   )}\n`,
 );
+writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
 
 process.stdout.write(`Synchronized OpenMeshTak Core v${version} OpenAPI (${digest}).\n`);

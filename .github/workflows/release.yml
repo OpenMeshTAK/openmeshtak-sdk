@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      npm_tag: ${{ steps.version.outputs.npm_tag }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 10.12.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org/
+          package-manager-cache: false
+
+      - name: Check release versions
+        id: version
+        run: node scripts/check-version.mjs "$GITHUB_REF_NAME"
+
+      - name: Verify npm supports trusted publishing
+        shell: bash
+        run: |
+          npm_version="$(npm --version)"
+          node -e "const [major, minor] = process.argv[1].split('.').map(Number); if (major < 11 || (major === 11 && minor < 5)) process.exit(1)" "$npm_version"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=moderate
+
+      - name: Verify project
+        run: pnpm check
+
+      - name: Verify generated sources are committed
+        run: git diff --exit-code -- src/generated src/version.ts
+
+      - name: Build release metadata
+        run: pnpm release:notices
+
+      - name: Pack release artifact
+        shell: bash
+        run: |
+          mkdir release
+          npm pack --json --ignore-scripts > release/pack.json
+          package_file="$(node -e "const fs=require('fs'); const result=JSON.parse(fs.readFileSync('release/pack.json','utf8')); process.stdout.write(result[0].filename)")"
+          mv "$package_file" "release/openmeshtak-sdk-${{ steps.version.outputs.version }}.tgz"
+          cp dist/THIRD_PARTY_NOTICES.txt "release/openmeshtak-sdk-THIRD_PARTY_NOTICES-${{ steps.version.outputs.version }}.txt"
+          cp dist/sbom.cdx.json "release/openmeshtak-sdk-sbom-${{ steps.version.outputs.version }}.cdx.json"
+          rm release/pack.json
+
+      - name: Upload verified release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: openmeshtak-sdk-${{ steps.version.outputs.version }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Set up Node.js and npm registry
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org/
+          package-manager-cache: false
+
+      - name: Download verified release artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: openmeshtak-sdk-${{ needs.verify.outputs.version }}
+          path: release
+
+      - name: Publish to npm
+        env:
+          # OIDC trusted publishing takes precedence. NPM_TOKEN is only a first-release fallback.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish "release/openmeshtak-sdk-${{ needs.verify.outputs.version }}.tgz" --access public --tag "${{ needs.verify.outputs.npm_tag }}"
+
+  github-release:
+    needs: [verify, publish]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download verified release artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: openmeshtak-sdk-${{ needs.verify.outputs.version }}
+          path: release
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        shell: bash
+        run: |
+          prerelease_flag=""
+          if [ "$PRERELEASE" = "true" ]; then prerelease_flag="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --title "OpenMeshTak SDK $VERSION" --generate-notes --verify-tag $prerelease_flag \
+            release/*
