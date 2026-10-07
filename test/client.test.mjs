@@ -4,6 +4,7 @@ import {
   createOpenMeshTakClient,
   OPENAPI_SOURCE_VERSION,
   OpenMeshTakApiError,
+  paginate,
   SDK_VERSION,
   SUPPORTED_API_VERSION_RANGE,
 } from "../dist/index.js";
@@ -84,6 +85,81 @@ test("maps the initial convenience methods to their stable OpenAPI paths", async
     ],
   );
   assert.equal(requests.every((request) => request.headers.get("authorization") === null), true);
+});
+
+test("maps every convenience method to its OpenAPI operation", async () => {
+  const requests = [];
+  const client = createOpenMeshTakClient({
+    baseUrl: "https://example.test",
+    fetch: async (request) => {
+      requests.push(request);
+      return request.method === "DELETE" ? new Response(null, { status: 204 }) : jsonResponse({});
+    },
+  });
+  const e = "e1";
+  const transition = { version: 1 };
+
+  const calls = [
+    [() => client.getPrincipal(), "GET", "/principal"],
+    [() => client.updateEvent(e, {}), "PUT", "/events/e1"],
+    [() => client.activateEvent(e, transition), "POST", "/events/e1/activate"],
+    [() => client.archiveEvent(e, transition), "POST", "/events/e1/archive"],
+    [() => client.reactivateEvent(e, transition), "POST", "/events/e1/reactivate"],
+    [() => client.listEventRoles(e, { limit: 10 }), "GET", "/events/e1/roles?limit=10"],
+    [() => client.createEventRole(e, {}), "POST", "/events/e1/roles"],
+    [() => client.getEventRole(e, "r1"), "GET", "/events/e1/roles/r1"],
+    [() => client.updateEventRole(e, "r1", {}), "PUT", "/events/e1/roles/r1"],
+    [() => client.deleteEventRole(e, "r1"), "DELETE", "/events/e1/roles/r1"],
+    [() => client.listEventGroups(e), "GET", "/events/e1/groups"],
+    [() => client.getEventGroup(e, "g1"), "GET", "/events/e1/groups/g1"],
+    [() => client.updateEventGroup(e, "g1", {}), "PUT", "/events/e1/groups/g1"],
+    [() => client.deleteEventGroup(e, "g1"), "DELETE", "/events/e1/groups/g1"],
+    [() => client.listEventMembers(e, { cursor: "c1" }), "GET", "/events/e1/members?cursor=c1"],
+    [() => client.createEventMember(e, {}), "POST", "/events/e1/members"],
+    [() => client.createEventMemberAccount(e, {}), "POST", "/events/e1/members/accounts"],
+    [() => client.getEventMember(e, "m1"), "GET", "/events/e1/members/m1"],
+    [() => client.updateEventMember(e, "m1", {}), "PUT", "/events/e1/members/m1"],
+    [() => client.deleteEventMember(e, "m1"), "DELETE", "/events/e1/members/m1"],
+    [() => client.listSyncIssues(e, { status: "open" }), "GET", "/events/e1/sync-issues?status=open"],
+    [() => client.retrySyncIssue(e, "s1"), "POST", "/events/e1/sync-issues/s1/retry"],
+    [() => client.listMemberClaims(e, "m1"), "GET", "/events/e1/members/m1/claims"],
+    [() => client.createMemberClaim(e, "m1"), "POST", "/events/e1/members/m1/claims"],
+    [() => client.revokeMemberClaim(e, "m1", "c1"), "POST", "/events/e1/members/m1/claims/c1/revoke"],
+    [() => client.listConfigurationRevisions(e), "GET", "/events/e1/configuration-revisions"],
+    [() => client.publishConfiguration(e), "POST", "/events/e1/configuration-revisions"],
+    [() => client.getConfigurationRevision(e, "v1"), "GET", "/events/e1/configuration-revisions/v1"],
+  ];
+
+  for (const [call, method, path] of calls) {
+    requests.length = 0;
+    await call();
+    const url = new URL(requests[0].url);
+    assert.deepEqual([requests[0].method, `${url.pathname}${url.search}`], [method, `/api/v1${path}`]);
+  }
+  assert.equal(await client.deleteEventRole(e, "r1"), undefined);
+});
+
+test("paginate follows opaque cursors until the last page", async () => {
+  const pages = {
+    "": { items: [1, 2], page: { nextCursor: "next-1", hasMore: true } },
+    "next-1": { items: [3], page: { nextCursor: null, hasMore: false } },
+  };
+  const cursors = [];
+  const client = createOpenMeshTakClient({
+    baseUrl: "https://example.test",
+    fetch: async (request) => {
+      const cursor = new URL(request.url).searchParams.get("cursor") ?? "";
+      cursors.push(cursor);
+      return jsonResponse(pages[cursor]);
+    },
+  });
+
+  const items = [];
+  for await (const item of paginate((page) => client.listEventMembers("e1", { limit: 2, ...page }))) {
+    items.push(item);
+  }
+  assert.deepEqual(items, [1, 2, 3]);
+  assert.deepEqual(cursors, ["", "next-1"]);
 });
 
 test("throws a predictable problem-details error without branching on message text", async () => {

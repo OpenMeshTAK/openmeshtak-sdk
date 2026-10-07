@@ -62,16 +62,37 @@ The API key can be a string or an asynchronous provider, which makes key rotatio
 recreating the client. Never put an API key in a URL or log it. When `apiKey` is omitted, browser
 calls may use the Core session cookie according to the configured `credentials` mode.
 
-## Initial convenience surface
+## Convenience surface
 
-- `listEvents`
-- `createEvent`
-- `getEvent`
-- `createEventGroup`
-- `upsertExternalMember`
-- `getMemberProfile`
+Each method maps to one API operation and throws `OpenMeshTakApiError` on a problem response.
 
-Generated DTOs and operation types are exported from `@openmeshtak/sdk/generated`.
+- Caller: `getPrincipal`
+- Events: `listEvents`, `createEvent`, `getEvent`, `updateEvent`, `activateEvent`, `archiveEvent`,
+  `reactivateEvent`
+- Roles: `listEventRoles`, `createEventRole`, `getEventRole`, `updateEventRole`, `deleteEventRole`
+- Groups: `listEventGroups`, `createEventGroup`, `getEventGroup`, `updateEventGroup`,
+  `deleteEventGroup`
+- Members: `listEventMembers`, `createEventMember`, `createEventMemberAccount`, `getEventMember`,
+  `updateEventMember`, `deleteEventMember`, `upsertExternalMember`, `getMemberProfile`
+- Sync issues: `listSyncIssues`, `retrySyncIssue`
+- Member claims: `listMemberClaims`, `createMemberClaim`, `revokeMemberClaim`
+- Configuration: `listConfigurationRevisions`, `publishConfiguration`, `getConfigurationRevision`
+
+`createEventMemberAccount` and `createMemberClaim` return single-use links. Send them only to the
+person they are for and never log them.
+
+List methods return one page. `paginate` walks through all of them:
+
+```ts
+import { paginate } from "@openmeshtak/sdk";
+
+for await (const member of paginate((page) => client.listEventMembers(eventId, { limit: 100, ...page }))) {
+  console.log(member.id);
+}
+```
+
+Generated DTOs and operation types for every other operation are exported from
+`@openmeshtak/sdk/generated`.
 
 ## Releases
 

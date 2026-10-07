@@ -1,21 +1,44 @@
 import createClient, { type Client, type ClientOptions } from "openapi-fetch";
-import type { components, paths } from "./generated/schema.js";
+import type { paths } from "./generated/schema.js";
 import { OpenMeshTakApiError } from "./errors.js";
+import type {
+  ConfigurationRevision,
+  ConfigurationRevisionPage,
+  CreateEventGroupRequest,
+  CreateEventMemberAccountRequest,
+  CreateEventMemberRequest,
+  CreateEventRequest,
+  CreateEventRoleRequest,
+  CreatedEventMemberAccount,
+  CreatedMemberClaim,
+  Event,
+  EventGroup,
+  EventGroupPage,
+  EventMember,
+  EventMemberPage,
+  EventPage,
+  EventRole,
+  EventRolePage,
+  EventTransitionRequest,
+  ExternalMemberSyncRequest,
+  ExternalMemberSyncResult,
+  ExternalProvider,
+  ListEventsOptions,
+  ListSyncIssuesOptions,
+  MemberClaim,
+  PageOptions,
+  Principal,
+  PublishConfigurationResult,
+  ResolvedProfile,
+  RetrySyncIssueRequest,
+  SyncIssuePage,
+  UpdateEventGroupRequest,
+  UpdateEventMemberRequest,
+  UpdateEventRequest,
+  UpdateEventRoleRequest,
+} from "./types.js";
 
 export type ApiKeyProvider = string | (() => string | Promise<string>);
-export type ListEventsOptions = NonNullable<paths["/events"]["get"]["parameters"]["query"]>;
-export type CreateEventRequest = paths["/events"]["post"]["requestBody"]["content"]["application/json"];
-export type CreateEventGroupRequest =
-  paths["/events/{eventId}/groups"]["post"]["requestBody"]["content"]["application/json"];
-export type ExternalMemberSyncRequest =
-  paths["/events/{eventId}/external-members/{provider}/{externalId}"]["put"]["requestBody"]["content"]["application/json"];
-export type ExternalProvider =
-  paths["/events/{eventId}/external-members/{provider}/{externalId}"]["put"]["parameters"]["path"]["provider"];
-export type EventPage = components["schemas"]["EventPage"];
-export type Event = components["schemas"]["EventDto"];
-export type EventGroup = components["schemas"]["EventGroupDto"];
-export type ExternalMemberSyncResult = components["schemas"]["ExternalMemberSyncResult"];
-export type ResolvedProfile = components["schemas"]["ResolvedProfileDto"];
 
 export interface OpenMeshTakClientOptions {
   /** Server origin or complete `/api/v1` base URL. */
@@ -72,7 +95,14 @@ async function unwrap<T>(call: Promise<ApiResult<T>>): Promise<T> {
   return data as T;
 }
 
-/** Typed convenience client for the stable initial OpenMeshTak SDK surface. */
+async function unwrapEmpty(call: Promise<ApiResult<unknown>>): Promise<void> {
+  await unwrap(call);
+}
+
+/**
+ * Typed convenience client for common integration tasks. Every method maps to one OpenAPI
+ * operation; the generated types in `@openmeshtak/sdk/generated` describe all others.
+ */
 export class OpenMeshTakClient {
   readonly #api: Client<paths>;
 
@@ -97,6 +127,13 @@ export class OpenMeshTakClient {
     }
   }
 
+  /** The caller behind the configured credentials, for example to check an API key. */
+  getPrincipal(): Promise<Principal> {
+    return unwrap(this.#api.GET("/principal"));
+  }
+
+  // Events
+
   listEvents(options: ListEventsOptions = {}): Promise<EventPage> {
     return unwrap(this.#api.GET("/events", { params: { query: options } }));
   }
@@ -109,10 +146,120 @@ export class OpenMeshTakClient {
     return unwrap(this.#api.GET("/events/{eventId}", { params: { path: { eventId } } }));
   }
 
+  /** Replaces the editable settings; `body.version` must be the version last read. */
+  updateEvent(eventId: string, body: UpdateEventRequest): Promise<Event> {
+    return unwrap(this.#api.PUT("/events/{eventId}", { params: { path: { eventId } }, body }));
+  }
+
+  activateEvent(eventId: string, body: EventTransitionRequest): Promise<Event> {
+    return unwrap(this.#api.POST("/events/{eventId}/activate", { params: { path: { eventId } }, body }));
+  }
+
+  archiveEvent(eventId: string, body: EventTransitionRequest): Promise<Event> {
+    return unwrap(this.#api.POST("/events/{eventId}/archive", { params: { path: { eventId } }, body }));
+  }
+
+  reactivateEvent(eventId: string, body: EventTransitionRequest): Promise<Event> {
+    return unwrap(this.#api.POST("/events/{eventId}/reactivate", { params: { path: { eventId } }, body }));
+  }
+
+  // Event roles
+
+  listEventRoles(eventId: string, options: PageOptions = {}): Promise<EventRolePage> {
+    return unwrap(this.#api.GET("/events/{eventId}/roles", { params: { path: { eventId }, query: options } }));
+  }
+
+  createEventRole(eventId: string, body: CreateEventRoleRequest): Promise<EventRole> {
+    return unwrap(this.#api.POST("/events/{eventId}/roles", { params: { path: { eventId } }, body }));
+  }
+
+  getEventRole(eventId: string, roleId: string): Promise<EventRole> {
+    return unwrap(this.#api.GET("/events/{eventId}/roles/{roleId}", { params: { path: { eventId, roleId } } }));
+  }
+
+  updateEventRole(eventId: string, roleId: string, body: UpdateEventRoleRequest): Promise<EventRole> {
+    return unwrap(
+      this.#api.PUT("/events/{eventId}/roles/{roleId}", { params: { path: { eventId, roleId } }, body }),
+    );
+  }
+
+  deleteEventRole(eventId: string, roleId: string): Promise<void> {
+    return unwrapEmpty(
+      this.#api.DELETE("/events/{eventId}/roles/{roleId}", { params: { path: { eventId, roleId } } }),
+    );
+  }
+
+  // Event groups
+
+  listEventGroups(eventId: string, options: PageOptions = {}): Promise<EventGroupPage> {
+    return unwrap(this.#api.GET("/events/{eventId}/groups", { params: { path: { eventId }, query: options } }));
+  }
+
   createEventGroup(eventId: string, body: CreateEventGroupRequest): Promise<EventGroup> {
     return unwrap(this.#api.POST("/events/{eventId}/groups", { params: { path: { eventId } }, body }));
   }
 
+  getEventGroup(eventId: string, groupId: string): Promise<EventGroup> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/groups/{groupId}", { params: { path: { eventId, groupId } } }),
+    );
+  }
+
+  updateEventGroup(eventId: string, groupId: string, body: UpdateEventGroupRequest): Promise<EventGroup> {
+    return unwrap(
+      this.#api.PUT("/events/{eventId}/groups/{groupId}", { params: { path: { eventId, groupId } }, body }),
+    );
+  }
+
+  deleteEventGroup(eventId: string, groupId: string): Promise<void> {
+    return unwrapEmpty(
+      this.#api.DELETE("/events/{eventId}/groups/{groupId}", { params: { path: { eventId, groupId } } }),
+    );
+  }
+
+  // Event members
+
+  listEventMembers(eventId: string, options: PageOptions = {}): Promise<EventMemberPage> {
+    return unwrap(this.#api.GET("/events/{eventId}/members", { params: { path: { eventId }, query: options } }));
+  }
+
+  /** Adds an existing OpenMeshTak user. Members from external systems use `upsertExternalMember`. */
+  createEventMember(eventId: string, body: CreateEventMemberRequest): Promise<EventMember> {
+    return unwrap(this.#api.POST("/events/{eventId}/members", { params: { path: { eventId } }, body }));
+  }
+
+  /**
+   * Creates a new person and adds them to the event. The result contains a single-use setup link;
+   * hand it only to that person and never log it.
+   */
+  createEventMemberAccount(
+    eventId: string,
+    body: CreateEventMemberAccountRequest,
+  ): Promise<CreatedEventMemberAccount> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/members/accounts", { params: { path: { eventId } }, body }),
+    );
+  }
+
+  getEventMember(eventId: string, memberId: string): Promise<EventMember> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/members/{memberId}", { params: { path: { eventId, memberId } } }),
+    );
+  }
+
+  updateEventMember(eventId: string, memberId: string, body: UpdateEventMemberRequest): Promise<EventMember> {
+    return unwrap(
+      this.#api.PUT("/events/{eventId}/members/{memberId}", { params: { path: { eventId, memberId } }, body }),
+    );
+  }
+
+  deleteEventMember(eventId: string, memberId: string): Promise<void> {
+    return unwrapEmpty(
+      this.#api.DELETE("/events/{eventId}/members/{memberId}", { params: { path: { eventId, memberId } } }),
+    );
+  }
+
+  /** Creates or updates the member an external system knows by `provider` plus `externalId`. */
   upsertExternalMember(
     eventId: string,
     provider: ExternalProvider,
@@ -131,6 +278,74 @@ export class OpenMeshTakClient {
     return unwrap(
       this.#api.GET("/events/{eventId}/members/{memberId}/profile", {
         params: { path: { eventId, memberId } },
+      }),
+    );
+  }
+
+  // Sync issues
+
+  listSyncIssues(eventId: string, options: ListSyncIssuesOptions = {}): Promise<SyncIssuePage> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/sync-issues", { params: { path: { eventId }, query: options } }),
+    );
+  }
+
+  retrySyncIssue(
+    eventId: string,
+    syncIssueId: string,
+    body: RetrySyncIssueRequest = {},
+  ): Promise<ExternalMemberSyncResult> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/sync-issues/{syncIssueId}/retry", {
+        params: { path: { eventId, syncIssueId } },
+        body,
+      }),
+    );
+  }
+
+  // Member claims
+
+  listMemberClaims(eventId: string, memberId: string): Promise<MemberClaim[]> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/members/{memberId}/claims", { params: { path: { eventId, memberId } } }),
+    );
+  }
+
+  /**
+   * Creates a single-use claim link for a member. Token and link are returned only here; send them
+   * only to that member and never log them.
+   */
+  createMemberClaim(eventId: string, memberId: string): Promise<CreatedMemberClaim> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/members/{memberId}/claims", { params: { path: { eventId, memberId } } }),
+    );
+  }
+
+  revokeMemberClaim(eventId: string, memberId: string, claimId: string): Promise<MemberClaim> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/members/{memberId}/claims/{claimId}/revoke", {
+        params: { path: { eventId, memberId, claimId } },
+      }),
+    );
+  }
+
+  // Configuration revisions
+
+  listConfigurationRevisions(eventId: string, options: PageOptions = {}): Promise<ConfigurationRevisionPage> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/configuration-revisions", { params: { path: { eventId }, query: options } }),
+    );
+  }
+
+  /** Publishes the current configuration of an active event; `created` is false when unchanged. */
+  publishConfiguration(eventId: string): Promise<PublishConfigurationResult> {
+    return unwrap(this.#api.POST("/events/{eventId}/configuration-revisions", { params: { path: { eventId } } }));
+  }
+
+  getConfigurationRevision(eventId: string, revisionId: string): Promise<ConfigurationRevision> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/configuration-revisions/{revisionId}", {
+        params: { path: { eventId, revisionId } },
       }),
     );
   }
