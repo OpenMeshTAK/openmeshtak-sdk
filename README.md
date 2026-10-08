@@ -94,42 +94,6 @@ for await (const member of paginate((page) => client.listEventMembers(eventId, {
 Generated DTOs and operation types for every other operation are exported from
 `@openmeshtak/sdk/generated`.
 
-## Releases
-
-The SDK version always equals the OpenMeshTak Core version it was built from: SDK `0.2.0` belongs
-to Core `0.2.0`, SDK `0.2.1` to Core `0.2.1`. It supports every Core patch release of the same
-minor version (`>=0.2.0 <0.3.0`), so an older SDK keeps working after a Core patch update. The SDK
-is released together with Core and Web.
-
-Releases are driven by annotated `vMAJOR.MINOR.PATCH[-PRERELEASE]` tags. The release workflow:
-
-1. verifies the tag, package version, API compatibility range and OpenAPI checksum;
-2. installs with the frozen lockfile, audits dependencies and runs the complete check;
-3. packs the npm tarball and generates third-party notices plus a CycloneDX SBOM;
-4. publishes `@openmeshtak/sdk` to npm (`latest` for stable versions, `next` for prereleases);
-5. creates a GitHub Release containing the verified tarball, notices and SBOM.
-
-To prepare a release for Core `0.2.1` by hand:
-
-```powershell
-pnpm api:sync -- ..openmeshtakopenapiopenapi.json   # from Core at tag v0.2.1
-pnpm version:set -- 0.2.1
-# set openmeshtak.apiVersionRange in package.json to ">=0.2.1 <0.3.0"
-pnpm generate
-pnpm check
-git commit -am "chore(release): 0.2.1"
-git tag -a v0.2.1 -m "OpenMeshTak SDK 0.2.1"
-git push origin main
-git push origin v0.2.1
-```
-
-The workflow refuses mismatched tags or version metadata. Publishing happens only after the pushed
-tag passes all checks.
-
-npm publishing uses trusted publishing (OIDC) for organization `OpenMeshTAK`, repository
-`openmeshtak-sdk` and workflow `release.yml`, with direct `npm publish` allowed and no
-environment. The package requires 2FA and refuses bypass tokens, so no npm token exists for it.
-
 ## License
 
 Apache-2.0
