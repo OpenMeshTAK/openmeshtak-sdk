@@ -8,8 +8,8 @@ const bytes = readFileSync(sourcePath);
 const document = JSON.parse(bytes.toString("utf8"));
 const version = document?.info?.version;
 
-if (typeof version !== "string" || !/^0\.1\.\d+$/.test(version)) {
-  throw new Error("The OpenAPI artifact must declare a supported 0.1.x Core version.");
+if (typeof version !== "string" || !/^\d+\.\d+\.\d+$/.test(version)) {
+  throw new Error("The OpenAPI artifact must declare a Core version such as 0.2.0.");
 }
 if (typeof document.openapi !== "string" || !document.openapi.startsWith("3.")) {
   throw new Error("The source is not an OpenAPI 3 document.");

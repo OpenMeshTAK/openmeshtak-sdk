@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   createOpenMeshTakClient,
@@ -208,8 +209,9 @@ test("rejects credentials in the base URL and malformed API keys", async () => {
   }
 });
 
-test("declares the Core API compatibility range", () => {
-  assert.equal(SDK_VERSION, "0.1.0");
-  assert.equal(SUPPORTED_API_VERSION_RANGE, ">=0.1.9 <0.2.0");
-  assert.equal(OPENAPI_SOURCE_VERSION, "0.1.9");
+test("declares the Core API compatibility range from package.json", () => {
+  const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  assert.equal(SDK_VERSION, packageJson.version);
+  assert.equal(SUPPORTED_API_VERSION_RANGE, packageJson.openmeshtak.apiVersionRange);
+  assert.equal(OPENAPI_SOURCE_VERSION, packageJson.openmeshtak.openApiVersion);
 });
