@@ -126,9 +126,9 @@ git push origin v0.2.1
 The workflow refuses mismatched tags or version metadata. Publishing happens only after the pushed
 tag passes all checks.
 
-npm publishing uses trusted publishing for organization `OpenMeshTAK`, repository
-`openmeshtak-sdk` and workflow `release.yml`. For the package's very first publication, a
-short-lived granular `NPM_TOKEN` repository secret is used once and removed afterwards.
+npm publishing uses trusted publishing (OIDC) for organization `OpenMeshTAK`, repository
+`openmeshtak-sdk` and workflow `release.yml`, with direct `npm publish` allowed and no
+environment. The package requires 2FA and refuses bypass tokens, so no npm token exists for it.
 
 ## License
 
