@@ -611,9 +611,10 @@
 						"enum": [
 							"issued",
 							"added",
-							"acme"
+							"acme",
+							"file"
 						],
-						"description": "OpenMeshTak-issued, administrator-added, or obtained automatically through ACME."
+						"description": "OpenMeshTak-issued, administrator-added, obtained automatically through ACME, or read from the reverse proxy's files."
 					},
 					"hostName": {
 						"type": "string"
@@ -635,6 +636,24 @@
 					"subject",
 					"fingerprintSha256",
 					"notAfter"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakCertificateFilesDto": {
+				"properties": {
+					"certificateFile": {
+						"type": "string",
+						"description": "Full chain, server certificate first, e.g. `live/tak.example.org/fullchain.pem`."
+					},
+					"keyFile": {
+						"type": "string",
+						"description": "Unencrypted private key, e.g. `live/tak.example.org/privkey.pem`."
+					}
+				},
+				"required": [
+					"certificateFile",
+					"keyFile"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -676,6 +695,19 @@
 						"nullable": true,
 						"description": "`null` until the server first starts or a certificate is added."
 					},
+					"certificateFiles": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakCertificateFilesDto"
+							}
+						],
+						"nullable": true,
+						"description": "The reverse proxy's certificate files Core reads, relative to `certificateDirectory`; `null` unless used."
+					},
+					"certificateDirectory": {
+						"type": "string",
+						"description": "Where the proxy's certificate directory must be mounted for `certificateFiles`."
+					},
 					"endpointChangedAt": {
 						"type": "string",
 						"nullable": true,
@@ -706,6 +738,8 @@
 					"streamingPort",
 					"clientCertificateDays",
 					"serverCertificate",
+					"certificateFiles",
+					"certificateDirectory",
 					"endpointChangedAt",
 					"validClientCertificates",
 					"clientCertificatesToReEnroll",
@@ -800,6 +834,25 @@
 				"required": [
 					"certificateChainPem",
 					"privateKeyPem"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UseTakCertificateFilesRequest": {
+				"description": "Use the reverse proxy's certificate files; both paths are relative to the mounted directory.",
+				"properties": {
+					"certificateFile": {
+						"type": "string",
+						"maxLength": 500
+					},
+					"keyFile": {
+						"type": "string",
+						"maxLength": 500
+					}
+				},
+				"required": [
+					"certificateFile",
+					"keyFile"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1251,6 +1304,24 @@
 					"challengeType",
 					"provider",
 					"cloudflareZoneId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakAcmeTestResultDto": {
+				"description": "Result of a test run against Let's Encrypt staging.",
+				"properties": {
+					"succeeded": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string",
+						"description": "What happened, safe to show to the administrator."
+					}
+				},
+				"required": [
+					"succeeded",
+					"message"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -6905,7 +6976,7 @@
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
-		"version": "0.2.0",
+		"version": "0.2.1",
 		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
 		"license": {
 			"name": "AGPL-3.0-only"
@@ -8786,7 +8857,7 @@
 						}
 					}
 				},
-				"description": "Removes an added or ACME certificate and disables ACME; the server then uses one issued by the\nOpenMeshTak CA.",
+				"description": "Removes an added, ACME or file certificate and disables ACME and the file reload; the server then uses one issued by the\nOpenMeshTak CA.",
 				"tags": [
 					"TAK server"
 				],
@@ -8796,6 +8867,73 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/tak-server/server-certificate/files": {
+			"put": {
+				"operationId": "UseTakCertificateFiles",
+				"responses": {
+					"200": {
+						"description": "Certificate files in use",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakServerSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Uses the reverse proxy's certificate files, mounted read-only below `certificateDirectory`.\nCore reloads them every twelve hours, so a certificate the proxy renews is picked up. Disables ACME.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UseTakCertificateFilesRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/tak-traffic": {
@@ -9608,6 +9746,63 @@
 					}
 				},
 				"description": "Immediately obtains or renews the public certificate with the configured solver.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/tak-server/acme/test": {
+			"post": {
+				"operationId": "Test",
+				"responses": {
+					"200": {
+						"description": "Test finished",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakAcmeTestResultDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Runs the saved settings against Let's Encrypt staging to check the setup without touching the\nproduction rate limits. Nothing is installed; a failure is returned as `succeeded: false`.",
 				"tags": [
 					"TAK server"
 				],
