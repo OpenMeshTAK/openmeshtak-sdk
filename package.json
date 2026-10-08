@@ -1,6 +1,6 @@
 {
   "name": "@openmeshtak/sdk",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Official TypeScript and JavaScript client for the OpenMeshTak API",
   "license": "Apache-2.0",
   "type": "module",
@@ -11,8 +11,8 @@
   },
   "packageManager": "pnpm@10.12.4",
   "openmeshtak": {
-    "apiVersionRange": ">=0.2.1 <0.3.0",
-    "openApiVersion": "0.2.1"
+    "apiVersionRange": ">=0.2.2 <0.3.0",
+    "openApiVersion": "0.2.2"
   },
   "files": [
     "dist",

@@ -1326,22 +1326,11 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"TakConnectionMode": {
-				"type": "string",
-				"enum": [
-					"none",
-					"meshtastic-local-server",
-					"built-in-server"
-				],
-				"description": "- `none`: OpenMeshTak gives no TAK connection guidance.\n- `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and\n  connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so\n  OpenMeshTak provides guidance and settings, not a ready-made connection package.\n- `built-in-server`: participants enroll ATAK/iTAK with the built-in OpenMeshTak TAK server."
-			},
 			"TakConfigurationDto": {
+				"description": "TAK settings of a Meshtastic event. Every event sends TAK clients to the built-in TAK server;\nMeshtastic events (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's\nlocal TAK server, which carries CoT over this channel.",
 				"properties": {
 					"eventId": {
 						"$ref": "#/components/schemas/Uuid"
-					},
-					"mode": {
-						"$ref": "#/components/schemas/TakConnectionMode"
 					},
 					"meshChannelId": {
 						"allOf": [
@@ -1365,7 +1354,6 @@
 				},
 				"required": [
 					"eventId",
-					"mode",
 					"meshChannelId",
 					"version",
 					"updatedAt"
@@ -1381,9 +1369,6 @@
 						"description": "Version the client last read.",
 						"minimum": 0
 					},
-					"mode": {
-						"$ref": "#/components/schemas/TakConnectionMode"
-					},
 					"meshChannelId": {
 						"allOf": [
 							{
@@ -1395,7 +1380,6 @@
 				},
 				"required": [
 					"version",
-					"mode",
 					"meshChannelId"
 				],
 				"type": "object",
@@ -1784,70 +1768,52 @@
 				],
 				"description": "ATAK member roles from the upstream Meshtastic `atak.proto` `MemberRole` enum."
 			},
-			"ProfileTakConnection": {
-				"anyOf": [
-					{
-						"properties": {
-							"meshChannel": {
-								"properties": {
-									"slot": {
-										"type": "number",
-										"format": "double"
-									},
-									"name": {
-										"type": "string"
-									}
-								},
-								"required": [
-									"slot",
-									"name"
-								],
-								"type": "object",
-								"nullable": true
-							},
-							"mode": {
-								"type": "string",
-								"enum": [
-									"meshtastic-local-server"
-								],
-								"nullable": false
-							}
-						},
-						"required": [
-							"meshChannel",
-							"mode"
-						],
-						"type": "object"
+			"ProfileTakServer": {
+				"description": "The built-in TAK server participants enroll with from the dashboard.",
+				"properties": {
+					"hostName": {
+						"type": "string",
+						"nullable": true,
+						"description": "`null` while the TAK server is not enabled."
 					},
-					{
+					"streamingPort": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"hostName",
+					"streamingPort"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ProfileMeshtasticTakServer": {
+				"description": "The Meshtastic app's local TAK server, which carries CoT over the mesh when there is no network.\n`meshChannel` is the value for the app's \"TAK Mesh Channel\": the channel's slot on this member's\ndevice, or `null` while that channel has not reached the device yet (then the primary channel\nis used).",
+				"properties": {
+					"meshChannel": {
 						"properties": {
-							"streamingPort": {
+							"slot": {
 								"type": "number",
 								"format": "double"
 							},
-							"hostName": {
-								"type": "string",
-								"nullable": true,
-								"description": "`null` while the TAK server is not enabled."
-							},
-							"mode": {
-								"type": "string",
-								"enum": [
-									"built-in-server"
-								],
-								"nullable": false,
-								"description": "Enroll with the built-in TAK server from the dashboard."
+							"name": {
+								"type": "string"
 							}
 						},
 						"required": [
-							"streamingPort",
-							"hostName",
-							"mode"
+							"slot",
+							"name"
 						],
-						"type": "object"
+						"type": "object",
+						"nullable": true
 					}
+				},
+				"required": [
+					"meshChannel"
 				],
-				"description": "Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the\napp's \"TAK Mesh Channel\": the channel's slot on this member's device, or `null` while that\nchannel has not reached the device yet (then the primary channel is used)."
+				"type": "object",
+				"additionalProperties": false
 			},
 			"ProfileChannel": {
 				"description": "A channel the member receives. `included` channels come with the member's channel set;\n`on-site` channels are secret and handed out on site by a key holder before their release.",
@@ -1993,14 +1959,18 @@
 					},
 					"tak": {
 						"properties": {
-							"connection": {
+							"meshtasticLocalServer": {
 								"allOf": [
 									{
-										"$ref": "#/components/schemas/ProfileTakConnection"
+										"$ref": "#/components/schemas/ProfileMeshtasticTakServer"
 									}
 								],
 								"nullable": true,
-								"description": "How this member connects ATAK/iTAK; `null` when the event gives no guidance."
+								"description": "Meshtastic events also connect ATAK/iTAK to the Meshtastic app; `null` otherwise."
+							},
+							"server": {
+								"$ref": "#/components/schemas/ProfileTakServer",
+								"description": "Every member enrolls with the built-in TAK server for Data Packages and CoT over the network."
 							},
 							"serverGroups": {
 								"items": {
@@ -2020,7 +1990,8 @@
 							}
 						},
 						"required": [
-							"connection",
+							"meshtasticLocalServer",
+							"server",
 							"serverGroups",
 							"role",
 							"team",
@@ -2061,7 +2032,9 @@
 							"shortName",
 							"longName"
 						],
-						"type": "object"
+						"type": "object",
+						"nullable": true,
+						"description": "`null` when the event does not use Meshtastic."
 					}
 				},
 				"required": [
@@ -3187,6 +3160,14 @@
 					"publishedAt": {
 						"type": "string",
 						"format": "date-time"
+					},
+					"installOnEnrollment": {
+						"type": "boolean",
+						"description": "The built-in TAK server installs it in the app right after the app enrolls."
+					},
+					"installOnConnection": {
+						"type": "boolean",
+						"description": "The built-in TAK server installs it, and every new revision, whenever the app connects."
 					}
 				},
 				"required": [
@@ -3194,7 +3175,9 @@
 					"name",
 					"description",
 					"revision",
-					"publishedAt"
+					"publishedAt",
+					"installOnEnrollment",
+					"installOnConnection"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -3549,6 +3532,10 @@
 						"type": "boolean",
 						"description": "Accounts created for this event (new members, synchronized participants) are permanent instead\nof event accounts that are deleted when the event is archived."
 					},
+					"meshtasticEnabled": {
+						"type": "boolean",
+						"description": "The event provisions Meshtastic radios. When off, profiles carry no Meshtastic part, radio\ndownloads are unavailable and channels and radio settings stay stored but unused. Like other\nconfiguration it reaches participants of an active event with the next published revision."
+					},
 					"createdAt": {
 						"type": "string",
 						"format": "date-time"
@@ -3572,6 +3559,7 @@
 					"endsAt",
 					"takLoginTokenDays",
 					"permanentAccounts",
+					"meshtasticEnabled",
 					"createdAt",
 					"updatedAt",
 					"overview"
@@ -3642,6 +3630,10 @@
 						"type": "boolean",
 						"description": "Accounts created for this event (new members, synchronized participants) are permanent instead\nof event accounts that are deleted when the event is archived."
 					},
+					"meshtasticEnabled": {
+						"type": "boolean",
+						"description": "The event provisions Meshtastic radios. When off, profiles carry no Meshtastic part, radio\ndownloads are unavailable and channels and radio settings stay stored but unused. Like other\nconfiguration it reaches participants of an active event with the next published revision."
+					},
 					"createdAt": {
 						"type": "string",
 						"format": "date-time"
@@ -3662,6 +3654,7 @@
 					"endsAt",
 					"takLoginTokenDays",
 					"permanentAccounts",
+					"meshtasticEnabled",
 					"createdAt",
 					"updatedAt"
 				],
@@ -3706,6 +3699,10 @@
 					"permanentAccounts": {
 						"type": "boolean",
 						"description": "Accounts created for this event (new members, synchronized participants) are permanent instead\nof event accounts that are deleted when the event is archived. Defaults to `false`."
+					},
+					"meshtasticEnabled": {
+						"type": "boolean",
+						"description": "The event provisions Meshtastic radios. Defaults to `false`, a TAK-only event."
 					}
 				},
 				"required": [
@@ -3757,6 +3754,10 @@
 					"permanentAccounts": {
 						"type": "boolean",
 						"description": "Accounts created for this event (new members, synchronized participants) are permanent instead\nof event accounts that are deleted when the event is archived. Omitted keeps the current value."
+					},
+					"meshtasticEnabled": {
+						"type": "boolean",
+						"description": "The event provisions Meshtastic radios. Omitted keeps the current value."
 					}
 				},
 				"required": [
@@ -4130,6 +4131,11 @@
 					"eventGroup": {
 						"$ref": "#/components/schemas/EventAssignmentSummary"
 					},
+					"enrolledTakApps": {
+						"type": "number",
+						"format": "double",
+						"description": "TAK apps the member's user has enrolled with the built-in TAK server and that may still\nconnect (valid client certificates). Certificates belong to the user, not to one event."
+					},
 					"version": {
 						"type": "number",
 						"format": "double"
@@ -4154,6 +4160,7 @@
 					"shortName",
 					"eventRole",
 					"eventGroup",
+					"enrolledTakApps",
 					"version",
 					"createdAt",
 					"updatedAt"
@@ -4798,16 +4805,12 @@
 			},
 			"CurrentTakConfiguration": {
 				"properties": {
-					"mode": {
-						"$ref": "#/components/schemas/TakConnectionMode"
-					},
 					"meshChannelId": {
 						"type": "string",
 						"nullable": true
 					}
 				},
 				"required": [
-					"mode",
 					"meshChannelId"
 				],
 				"type": "object",
@@ -4815,10 +4818,10 @@
 			},
 			"SnapshotTak": {
 				"$ref": "#/components/schemas/CurrentTakConfiguration",
-				"description": "How TAK clients connect; `null` in revisions created before version 4."
+				"description": "The Meshtastic app's TAK mesh channel; `null` in revisions created before version 4. Revisions\nbefore version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced."
 			},
 			"ConfigurationSnapshot": {
-				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`.",
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added\n`meshtasticEnabled`.",
 				"properties": {
 					"schemaVersion": {
 						"type": "number",
@@ -4827,8 +4830,13 @@
 							2,
 							3,
 							4,
-							5
+							5,
+							6
 						]
+					},
+					"meshtasticEnabled": {
+						"type": "boolean",
+						"description": "Whether the event provisions Meshtastic radios; `true` in revisions before version 6. When\n`false`, `channels` is empty and `meshtastic` is `null`."
 					},
 					"roles": {
 						"items": {
@@ -4868,6 +4876,7 @@
 				},
 				"required": [
 					"schemaVersion",
+					"meshtasticEnabled",
 					"roles",
 					"groups",
 					"channels",
@@ -6976,7 +6985,7 @@
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
-		"version": "0.2.1",
+		"version": "0.2.2",
 		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
 		"license": {
 			"name": "AGPL-3.0-only"
@@ -12230,7 +12239,7 @@
 						}
 					},
 					"409": {
-						"description": "Meshtastic configuration not published",
+						"description": "Meshtastic configuration not published or event without Meshtastic",
 						"content": {
 							"application/json": {
 								"schema": {

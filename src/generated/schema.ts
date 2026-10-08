@@ -2732,17 +2732,12 @@ export interface components {
             message: string;
         };
         /**
-         * @description - `none`: OpenMeshTak gives no TAK connection guidance.
-         *     - `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and
-         *       connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so
-         *       OpenMeshTak provides guidance and settings, not a ready-made connection package.
-         *     - `built-in-server`: participants enroll ATAK/iTAK with the built-in OpenMeshTak TAK server.
-         * @enum {string}
+         * @description TAK settings of a Meshtastic event. Every event sends TAK clients to the built-in TAK server;
+         *     Meshtastic events (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's
+         *     local TAK server, which carries CoT over this channel.
          */
-        TakConnectionMode: "none" | "meshtastic-local-server" | "built-in-server";
         TakConfigurationDto: {
             eventId: components["schemas"]["Uuid"];
-            mode: components["schemas"]["TakConnectionMode"];
             /** @description Channel for the app's "TAK Mesh Channel"; `null` uses the primary channel. */
             meshChannelId: components["schemas"]["Uuid"] | null;
             /**
@@ -2759,7 +2754,6 @@ export interface components {
              * @description Version the client last read.
              */
             version: number;
-            mode: components["schemas"]["TakConnectionMode"];
             meshChannelId: components["schemas"]["Uuid"] | null;
         };
         SetupStatusResponse: {
@@ -2882,29 +2876,25 @@ export interface components {
          * @enum {string}
          */
         TakRole: "Team Member" | "Team Lead" | "HQ" | "Sniper" | "Medic" | "Forward Observer" | "RTO" | "K9";
+        /** @description The built-in TAK server participants enroll with from the dashboard. */
+        ProfileTakServer: {
+            /** @description `null` while the TAK server is not enabled. */
+            hostName: string | null;
+            /** Format: double */
+            streamingPort: number;
+        };
         /**
-         * @description Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the
-         *     app's "TAK Mesh Channel": the channel's slot on this member's device, or `null` while that
-         *     channel has not reached the device yet (then the primary channel is used).
+         * @description The Meshtastic app's local TAK server, which carries CoT over the mesh when there is no network.
+         *     `meshChannel` is the value for the app's "TAK Mesh Channel": the channel's slot on this member's
+         *     device, or `null` while that channel has not reached the device yet (then the primary channel
+         *     is used).
          */
-        ProfileTakConnection: {
+        ProfileMeshtasticTakServer: {
             meshChannel: {
                 /** Format: double */
                 slot: number;
                 name: string;
             } | null;
-            /** @enum {string} */
-            mode: "meshtastic-local-server";
-        } | {
-            /** Format: double */
-            streamingPort: number;
-            /** @description `null` while the TAK server is not enabled. */
-            hostName: string | null;
-            /**
-             * @description Enroll with the built-in TAK server from the dashboard.
-             * @enum {string}
-             */
-            mode: "built-in-server";
         };
         /**
          * @description A channel the member receives. `included` channels come with the member's channel set;
@@ -2961,14 +2951,17 @@ export interface components {
             eventRole: components["schemas"]["ProfileAssignment"];
             group: components["schemas"]["ProfileAssignment"];
             tak: {
-                /** @description How this member connects ATAK/iTAK; `null` when the event gives no guidance. */
-                connection: components["schemas"]["ProfileTakConnection"] | null;
+                /** @description Meshtastic events also connect ATAK/iTAK to the Meshtastic app; `null` otherwise. */
+                meshtasticLocalServer: components["schemas"]["ProfileMeshtasticTakServer"] | null;
+                /** @description Every member enrolls with the built-in TAK server for Data Packages and CoT over the network. */
+                server: components["schemas"]["ProfileTakServer"];
                 /** @description The group's TAK server groups for an external TAK server; the built-in server ignores them. */
                 serverGroups: string[];
                 role: components["schemas"]["TakRole"];
                 team: components["schemas"]["TakTeam"];
                 callsign: string;
             };
+            /** @description `null` when the event does not use Meshtastic. */
             meshtastic: {
                 /** @description `null` for configurations published before events had a firmware version. */
                 firmware: components["schemas"]["ProfileFirmware"] | null;
@@ -2977,7 +2970,7 @@ export interface components {
                 /** @description `null` only in previews while the group has no short-name prefix. */
                 shortName: string | null;
                 longName: string;
-            };
+            } | null;
         };
         MyEventMembershipDto: {
             eventId: components["schemas"]["Uuid"];
@@ -3367,6 +3360,10 @@ export interface components {
             revision: number;
             /** Format: date-time */
             publishedAt: string;
+            /** @description The built-in TAK server installs it in the app right after the app enrolls. */
+            installOnEnrollment: boolean;
+            /** @description The built-in TAK server installs it, and every new revision, whenever the app connects. */
+            installOnConnection: boolean;
         };
         /** @enum {string} */
         MemberClaimStatus: "open" | "consumed" | "revoked" | "expired";
@@ -3510,6 +3507,12 @@ export interface components {
              *     of event accounts that are deleted when the event is archived.
              */
             permanentAccounts: boolean;
+            /**
+             * @description The event provisions Meshtastic radios. When off, profiles carry no Meshtastic part, radio
+             *     downloads are unavailable and channels and radio settings stay stored but unused. Like other
+             *     configuration it reaches participants of an active event with the next published revision.
+             */
+            meshtasticEnabled: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -3548,6 +3551,12 @@ export interface components {
              *     of event accounts that are deleted when the event is archived.
              */
             permanentAccounts: boolean;
+            /**
+             * @description The event provisions Meshtastic radios. When off, profiles carry no Meshtastic part, radio
+             *     downloads are unavailable and channels and radio settings stay stored but unused. Like other
+             *     configuration it reaches participants of an active event with the next published revision.
+             */
+            meshtasticEnabled: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -3580,6 +3589,8 @@ export interface components {
              *     of event accounts that are deleted when the event is archived. Defaults to `false`.
              */
             permanentAccounts?: boolean;
+            /** @description The event provisions Meshtastic radios. Defaults to `false`, a TAK-only event. */
+            meshtasticEnabled?: boolean;
         };
         UpdateEventRequest: {
             /**
@@ -3606,6 +3617,8 @@ export interface components {
              *     of event accounts that are deleted when the event is archived. Omitted keeps the current value.
              */
             permanentAccounts?: boolean;
+            /** @description The event provisions Meshtastic radios. Omitted keeps the current value. */
+            meshtasticEnabled?: boolean;
         };
         EventTransitionRequest: {
             /**
@@ -3720,6 +3733,12 @@ export interface components {
             shortName: string | null;
             eventRole: components["schemas"]["EventAssignmentSummary"];
             eventGroup: components["schemas"]["EventAssignmentSummary"];
+            /**
+             * Format: double
+             * @description TAK apps the member's user has enrolled with the built-in TAK server and that may still
+             *     connect (valid client certificates). Certificates belong to the user, not to one event.
+             */
+            enrolledTakApps: number;
             /** Format: double */
             version: number;
             /** Format: date-time */
@@ -3930,19 +3949,27 @@ export interface components {
             settings: components["schemas"]["FirmwareSettingsDocument"];
         };
         CurrentTakConfiguration: {
-            mode: components["schemas"]["TakConnectionMode"];
             meshChannelId: string | null;
         };
-        /** @description How TAK clients connect; `null` in revisions created before version 4. */
+        /**
+         * @description The Meshtastic app's TAK mesh channel; `null` in revisions created before version 4. Revisions
+         *     before version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced.
+         */
         SnapshotTak: components["schemas"]["CurrentTakConfiguration"];
         /**
          * @description Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.
          *     Version 2 added `channels` in device order, the first being the primary channel; version 3
-         *     added `meshtastic`; version 4 added `tak`.
+         *     added `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added
+         *     `meshtasticEnabled`.
          */
         ConfigurationSnapshot: {
             /** @enum {number} */
-            schemaVersion: 1 | 2 | 3 | 4 | 5;
+            schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
+            /**
+             * @description Whether the event provisions Meshtastic radios; `true` in revisions before version 6. When
+             *     `false`, `channels` is empty and `meshtastic` is `null`.
+             */
+            meshtasticEnabled: boolean;
             roles: components["schemas"]["SnapshotRole"][];
             groups: components["schemas"]["SnapshotGroup"][];
             channels: components["schemas"]["SnapshotChannel"][];
@@ -8469,7 +8496,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Meshtastic configuration not published */
+            /** @description Meshtastic configuration not published or event without Meshtastic */
             409: {
                 headers: {
                     [name: string]: unknown;
