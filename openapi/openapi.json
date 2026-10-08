@@ -6905,7 +6905,7 @@
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
-		"version": "0.1.9",
+		"version": "0.2.0",
 		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
 		"license": {
 			"name": "AGPL-3.0-only"
@@ -12892,7 +12892,7 @@
 						}
 					},
 					"409": {
-						"description": "Slug already in use",
+						"description": "Slug already in use; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -12924,7 +12924,17 @@
 						"apiClientBearer": []
 					}
 				],
-				"parameters": [],
+				"parameters": [
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
 				"requestBody": {
 					"required": true,
 					"content": {
@@ -13559,7 +13569,7 @@
 						}
 					},
 					"409": {
-						"description": "Slug already in use or event archived",
+						"description": "Slug already in use or event archived; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -13597,6 +13607,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				],
@@ -14420,7 +14439,7 @@
 						}
 					},
 					"409": {
-						"description": "Already a member, callsign or short-name conflict, or event archived",
+						"description": "Already a member, callsign or short-name conflict, or event archived; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -14459,6 +14478,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				],
@@ -14963,7 +14991,7 @@
 						}
 					},
 					"409": {
-						"description": "Slug already in use or event archived",
+						"description": "Slug already in use or event archived; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -15001,6 +15029,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				],
@@ -15395,7 +15432,7 @@
 						}
 					},
 					"409": {
-						"description": "Event not active",
+						"description": "Event not active; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -15424,6 +15461,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				]
@@ -15935,7 +15981,7 @@
 						}
 					},
 					"409": {
-						"description": "Event archived",
+						"description": "Event archived; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -15972,6 +16018,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				]
@@ -16323,7 +16378,7 @@
 						}
 					},
 					"409": {
-						"description": "Layer locked, too many objects or event archived",
+						"description": "Layer locked, too many objects or event archived; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -16369,6 +16424,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				],
@@ -16933,7 +16997,7 @@
 						}
 					},
 					"409": {
-						"description": "Too many layers or event archived",
+						"description": "Too many layers or event archived; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -16980,6 +17044,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				],
@@ -17706,7 +17779,7 @@
 						}
 					},
 					"409": {
-						"description": "Event archived, nothing published or package limits exceeded",
+						"description": "Event archived, nothing published or package limits exceeded; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -17745,6 +17818,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				],
@@ -18606,7 +18688,7 @@
 						}
 					},
 					"409": {
-						"description": "Event archived",
+						"description": "Event archived; Idempotency-Key conflict",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -18645,6 +18727,15 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
 				],

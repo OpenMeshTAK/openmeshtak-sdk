@@ -8,8 +8,8 @@ Core business rules.
 
 ## Local development
 
-This checkout currently targets OpenMeshTak API `>=0.1.9 <0.2.0` and contains the OpenAPI artifact
-from Core `v0.1.9`. It requires Node.js 24 or newer.
+This checkout currently targets OpenMeshTak API `>=0.2.0 <0.3.0` and contains the OpenAPI artifact
+from Core `v0.2.0`. It requires Node.js 24 or newer.
 
 ```powershell
 pnpm install

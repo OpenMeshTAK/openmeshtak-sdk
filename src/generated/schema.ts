@@ -8868,7 +8868,10 @@ export interface operations {
     CreateEvent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -8905,7 +8908,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Slug already in use */
+            /** @description Slug already in use; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -9326,7 +9329,10 @@ export interface operations {
     CreateEventRole: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
             };
@@ -9374,7 +9380,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Slug already in use or event archived */
+            /** @description Slug already in use or event archived; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -9890,7 +9896,10 @@ export interface operations {
     CreateEventMember: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
             };
@@ -9938,7 +9947,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Already a member, callsign or short-name conflict, or event archived */
+            /** @description Already a member, callsign or short-name conflict, or event archived; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10263,7 +10272,10 @@ export interface operations {
     CreateEventGroup: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
             };
@@ -10311,7 +10323,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Slug already in use or event archived */
+            /** @description Slug already in use or event archived; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10556,7 +10568,10 @@ export interface operations {
     PublishConfiguration: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
             };
@@ -10600,7 +10615,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Event not active */
+            /** @description Event not active; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10946,7 +10961,10 @@ export interface operations {
     PublishDataPackage: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
                 packageId: components["schemas"]["Uuid"];
@@ -10991,7 +11009,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Event archived */
+            /** @description Event archived; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -11190,7 +11208,10 @@ export interface operations {
     CreatePackageObject: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
                 packageId: components["schemas"]["Uuid"];
@@ -11239,7 +11260,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Layer locked, too many objects or event archived */
+            /** @description Layer locked, too many objects or event archived; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -11593,7 +11614,10 @@ export interface operations {
     CreatePackageLayer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
                 packageId: components["schemas"]["Uuid"];
@@ -11642,7 +11666,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Too many layers or event archived */
+            /** @description Too many layers or event archived; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -12070,7 +12094,10 @@ export interface operations {
     CreateDataPackageCopy: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
             };
@@ -12118,7 +12145,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Event archived, nothing published or package limits exceeded */
+            /** @description Event archived, nothing published or package limits exceeded; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -12628,7 +12655,10 @@ export interface operations {
     CreateDataPackage: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 eventId: components["schemas"]["Uuid"];
             };
@@ -12676,7 +12706,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Event archived */
+            /** @description Event archived; Idempotency-Key conflict */
             409: {
                 headers: {
                     [name: string]: unknown;

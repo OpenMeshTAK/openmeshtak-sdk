@@ -11,8 +11,8 @@
   },
   "packageManager": "pnpm@10.12.4",
   "openmeshtak": {
-    "apiVersionRange": ">=0.1.9 <0.2.0",
-    "openApiVersion": "0.1.9"
+    "apiVersionRange": ">=0.2.0 <0.3.0",
+    "openApiVersion": "0.2.0"
   },
   "files": [
     "dist",
