@@ -107,7 +107,8 @@ jobs:
         env:
           # OIDC trusted publishing takes precedence. NPM_TOKEN is only a first-release fallback.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish "release/openmeshtak-sdk-${{ needs.verify.outputs.version }}.tgz" --access public --tag "${{ needs.verify.outputs.npm_tag }}"
+        # The ./ prefix makes npm treat the argument as a file; "release/x.tgz" reads as a GitHub repo.
+        run: npm publish "./release/openmeshtak-sdk-${{ needs.verify.outputs.version }}.tgz" --access public --tag "${{ needs.verify.outputs.npm_tag }}"
 
   github-release:
     needs: [verify, publish]
