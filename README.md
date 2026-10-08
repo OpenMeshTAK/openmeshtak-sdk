@@ -96,6 +96,11 @@ Generated DTOs and operation types for every other operation are exported from
 
 ## Releases
 
+The SDK version always equals the OpenMeshTak Core version it was built from: SDK `0.2.0` belongs
+to Core `0.2.0`, SDK `0.2.1` to Core `0.2.1`. It supports every Core patch release of the same
+minor version (`>=0.2.0 <0.3.0`), so an older SDK keeps working after a Core patch update. The SDK
+is released together with Core and Web.
+
 Releases are driven by annotated `vMAJOR.MINOR.PATCH[-PRERELEASE]` tags. The release workflow:
 
 1. verifies the tag, package version, API compatibility range and OpenAPI checksum;
@@ -104,36 +109,26 @@ Releases are driven by annotated `vMAJOR.MINOR.PATCH[-PRERELEASE]` tags. The rel
 4. publishes `@openmeshtak/sdk` to npm (`latest` for stable versions, `next` for prereleases);
 5. creates a GitHub Release containing the verified tarball, notices and SBOM.
 
-Before the first release:
-
-- create the public `OpenMeshTAK/openmeshtak-sdk` repository and add it as `origin`;
-- ensure the `@openmeshtak` npm scope can publish the public `sdk` package;
-- configure npm trusted publishing for organization `OpenMeshTAK`, repository
-  `openmeshtak-sdk` and workflow `release.yml`, with direct publish allowed;
-- if npm requires a one-time token for the package's first publication, add a short-lived granular
-  `NPM_TOKEN` repository secret, complete the first release, configure trusted publishing and then
-  remove the secret.
-
-Prepare a later version and regenerate the committed version module:
+To prepare a release for Core `0.2.1` by hand:
 
 ```powershell
-pnpm version:set -- 0.1.1
+pnpm api:sync -- ..openmeshtakopenapiopenapi.json   # from Core at tag v0.2.1
+pnpm version:set -- 0.2.1
+# set openmeshtak.apiVersionRange in package.json to ">=0.2.1 <0.3.0"
 pnpm generate
 pnpm check
-```
-
-Commit the version change, create an annotated tag matching `package.json` and push it:
-
-```powershell
-git commit -am "chore(release): 0.1.1"
-git tag -a v0.1.1 -m "OpenMeshTak SDK 0.1.1"
+git commit -am "chore(release): 0.2.1"
+git tag -a v0.2.1 -m "OpenMeshTak SDK 0.2.1"
 git push origin main
-git push origin v0.1.1
+git push origin v0.2.1
 ```
 
-For the first `0.1.0` release, create and push only the matching annotated tag after `main` is
-published. The workflow refuses mismatched tags or version metadata. Publishing happens only after
-the pushed tag passes all checks.
+The workflow refuses mismatched tags or version metadata. Publishing happens only after the pushed
+tag passes all checks.
+
+npm publishing uses trusted publishing for organization `OpenMeshTAK`, repository
+`openmeshtak-sdk` and workflow `release.yml`. For the package's very first publication, a
+short-lived granular `NPM_TOKEN` repository secret is used once and removed afterwards.
 
 ## License
 
