@@ -4,30 +4,10 @@ The official TypeScript and JavaScript client for the OpenMeshTak REST API.
 
 The SDK is generated from the released OpenAPI contract and adds a small handwritten layer for
 authentication, common operations and predictable problem-details errors. It does not duplicate
-Core business rules.
+Core business rules. The SDK version always matches the OpenMeshTak version it was built from and
+works with the later patch releases of that version line. Node.js 24 or newer is required.
 
-## Local development
-
-This checkout currently targets OpenMeshTak API `>=0.2.0 <0.3.0` and contains the OpenAPI artifact
-from Core `v0.2.0`. It requires Node.js 24 or newer.
-
-```powershell
-pnpm install
-pnpm check
-```
-
-The SDK is a library, not a server, so there is no long-running development process. `pnpm build`
-generates the contract types and writes the importable package to `dist/`.
-
-To refresh the checked-in contract from a verified Core release checkout:
-
-```powershell
-pnpm api:sync -- ..\openmeshtak\openapi\openapi.json
-pnpm check
-```
-
-Commit the OpenAPI artifact and generated declarations together. Do not edit
-`src/generated/schema.ts` or `src/version.ts` by hand.
+Documentation: https://openmeshtak.github.io/openmeshtak-docs/sdk/
 
 ## Usage
 
