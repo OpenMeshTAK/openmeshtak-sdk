@@ -1,5 +1,7 @@
 # OpenMeshTak SDK
 
+[![npm](https://img.shields.io/npm/v/@openmeshtak/sdk)](https://www.npmjs.com/package/@openmeshtak/sdk) [![License](https://img.shields.io/github/license/OpenMeshTAK/openmeshtak-sdk)](LICENSE) [![CI](https://github.com/OpenMeshTAK/openmeshtak-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenMeshTAK/openmeshtak-sdk/actions/workflows/ci.yml)
+
 The official TypeScript and JavaScript client for the OpenMeshTak REST API.
 
 The SDK is generated from the released OpenAPI contract and adds a small handwritten layer for
