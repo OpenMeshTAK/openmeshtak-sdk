@@ -1100,6 +1100,23 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"LiveTakAssignmentDto": {
+				"description": "An event group or role, as far as the live view needs it for grouping and filtering.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"LiveTakConnectionDto": {
 				"properties": {
 					"id": {
@@ -1110,6 +1127,24 @@
 					},
 					"userDisplayName": {
 						"type": "string"
+					},
+					"eventGroup": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/LiveTakAssignmentDto"
+							}
+						],
+						"nullable": true,
+						"description": "The user's group in this event, or null when they are not a member, e.g. an administrator."
+					},
+					"eventRole": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/LiveTakAssignmentDto"
+							}
+						],
+						"nullable": true,
+						"description": "The user's role in this event, or null when they are not a member."
 					},
 					"callsign": {
 						"type": "string",
@@ -1129,6 +1164,8 @@
 					"id",
 					"userId",
 					"userDisplayName",
+					"eventGroup",
+					"eventRole",
 					"callsign",
 					"connectedAt",
 					"lastSeenAt"
@@ -10564,7 +10601,7 @@
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
-		"version": "0.3.2",
+		"version": "0.3.3",
 		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
 		"license": {
 			"name": "AGPL-3.0-only"

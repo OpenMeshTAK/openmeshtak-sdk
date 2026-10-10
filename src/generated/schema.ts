@@ -3242,10 +3242,19 @@ export interface components {
             certificateFile: string;
             keyFile: string;
         };
+        /** @description An event group or role, as far as the live view needs it for grouping and filtering. */
+        LiveTakAssignmentDto: {
+            id: components["schemas"]["Uuid"];
+            name: string;
+        };
         LiveTakConnectionDto: {
             id: components["schemas"]["Uuid"];
             userId: components["schemas"]["Uuid"];
             userDisplayName: string;
+            /** @description The user's group in this event, or null when they are not a member, e.g. an administrator. */
+            eventGroup: components["schemas"]["LiveTakAssignmentDto"] | null;
+            /** @description The user's role in this event, or null when they are not a member. */
+            eventRole: components["schemas"]["LiveTakAssignmentDto"] | null;
             /** @description The app's callsign once it reported its position. */
             callsign: string | null;
             /** Format: date-time */
