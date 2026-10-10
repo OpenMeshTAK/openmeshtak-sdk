@@ -1158,6 +1158,18 @@
 						"type": "number",
 						"format": "double"
 					},
+					"course": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Direction of travel in degrees clockwise from true north (CoT `track/course`), or null when not sent."
+					},
+					"speed": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Ground speed in metres per second (CoT `track/speed`), or null when not sent."
+					},
 					"time": {
 						"type": "string",
 						"format": "date-time"
@@ -1173,6 +1185,8 @@
 					"callsign",
 					"lat",
 					"lon",
+					"course",
+					"speed",
 					"time",
 					"stale"
 				],
@@ -2301,6 +2315,249 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"SystemCheckState": {
+				"type": "string",
+				"enum": [
+					"ok",
+					"warning",
+					"error",
+					"off"
+				],
+				"description": "`off` marks a part that is switched off on purpose, such as a disabled TAK server."
+			},
+			"SystemCheckDto": {
+				"properties": {
+					"id": {
+						"type": "string",
+						"enum": [
+							"database",
+							"storage",
+							"tak-server",
+							"tak-certificate",
+							"errors"
+						]
+					},
+					"state": {
+						"$ref": "#/components/schemas/SystemCheckState"
+					},
+					"detail": {
+						"type": "string",
+						"description": "One plain sentence for operators; never contains secrets."
+					}
+				},
+				"required": [
+					"id",
+					"state",
+					"detail"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ServerLogLevel": {
+				"type": "string",
+				"enum": [
+					"trace",
+					"debug",
+					"info",
+					"warn",
+					"error",
+					"fatal"
+				]
+			},
+			"LoggedProblemDto": {
+				"description": "A stored warning or error, sanitized like the server log.",
+				"properties": {
+					"time": {
+						"type": "string",
+						"nullable": true
+					},
+					"level": {
+						"$ref": "#/components/schemas/ServerLogLevel"
+					},
+					"message": {
+						"type": "string"
+					},
+					"details": {
+						"type": "string",
+						"nullable": true,
+						"description": "Structured fields as JSON, or null."
+					}
+				},
+				"required": [
+					"time",
+					"level",
+					"message",
+					"details"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MetricScope": {
+				"type": "string",
+				"enum": [
+					"container",
+					"host"
+				],
+				"description": "Whether system CPU and memory are the container's (cgroup) or the whole machine's."
+			},
+			"MetricSampleDto": {
+				"properties": {
+					"time": {
+						"type": "string"
+					},
+					"coreCpuPercent": {
+						"type": "number",
+						"format": "double",
+						"description": "CPU used by the Core process, as a share of the CPUs it may use (0–100)."
+					},
+					"systemCpuPercent": {
+						"type": "number",
+						"format": "double",
+						"description": "CPU used by the container (against its CPU limit) or the machine, 0–100; see `scope`."
+					},
+					"coreMemoryBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "Resident memory of the Core process."
+					},
+					"systemMemoryUsedBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "Memory in use by the container or the machine; see `scope`."
+					},
+					"systemMemoryTotalBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "The container's memory limit (at most the machine's memory) or the machine's memory."
+					},
+					"takConnections": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"time",
+					"coreCpuPercent",
+					"systemCpuPercent",
+					"coreMemoryBytes",
+					"systemMemoryUsedBytes",
+					"systemMemoryTotalBytes",
+					"takConnections"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SystemStatusDto": {
+				"properties": {
+					"version": {
+						"type": "string",
+						"description": "Core release version."
+					},
+					"startedAt": {
+						"type": "string"
+					},
+					"checks": {
+						"items": {
+							"$ref": "#/components/schemas/SystemCheckDto"
+						},
+						"type": "array"
+					},
+					"databaseLatencyMs": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Database round trip of a trivial query in milliseconds; null when it failed."
+					},
+					"databaseBytes": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Size of the SQLite database file in bytes; null when unknown."
+					},
+					"storedFileBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "Bytes of stored files (Data Package content, icon sets)."
+					},
+					"diskFreeBytes": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Free and total bytes on the disk that holds the data directory; null when unknown."
+					},
+					"diskTotalBytes": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"memoryBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "Resident memory of the Core process in bytes."
+					},
+					"takConnections": {
+						"type": "number",
+						"format": "double",
+						"description": "Open TAK connections (streaming) right now."
+					},
+					"activeEvents": {
+						"type": "number",
+						"format": "double"
+					},
+					"recentErrors": {
+						"type": "number",
+						"format": "double",
+						"description": "Errors (including fatal) logged in the last 24 hours, also before a restart."
+					},
+					"recentWarnings": {
+						"type": "number",
+						"format": "double"
+					},
+					"problems": {
+						"items": {
+							"$ref": "#/components/schemas/LoggedProblemDto"
+						},
+						"type": "array",
+						"description": "Stored warnings and errors of the last seven days, newest first, at most 100."
+					},
+					"sampleIntervalSeconds": {
+						"type": "number",
+						"format": "double",
+						"description": "Seconds between two samples of `history`."
+					},
+					"metricScope": {
+						"$ref": "#/components/schemas/MetricScope"
+					},
+					"history": {
+						"items": {
+							"$ref": "#/components/schemas/MetricSampleDto"
+						},
+						"type": "array",
+						"description": "CPU, memory and TAK connections of the last six hours since Core started, oldest first."
+					}
+				},
+				"required": [
+					"version",
+					"startedAt",
+					"checks",
+					"databaseLatencyMs",
+					"databaseBytes",
+					"storedFileBytes",
+					"diskFreeBytes",
+					"diskTotalBytes",
+					"memoryBytes",
+					"takConnections",
+					"activeEvents",
+					"recentErrors",
+					"recentWarnings",
+					"problems",
+					"sampleIntervalSeconds",
+					"metricScope",
+					"history"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SetupStatusResponse": {
 				"properties": {
 					"configured": {
@@ -3312,17 +3569,6 @@
 				],
 				"type": "object",
 				"additionalProperties": false
-			},
-			"ServerLogLevel": {
-				"type": "string",
-				"enum": [
-					"trace",
-					"debug",
-					"info",
-					"warn",
-					"error",
-					"fatal"
-				]
 			},
 			"ServerLogEntryDto": {
 				"properties": {
@@ -9631,7 +9877,7 @@
 				"additionalProperties": false
 			},
 			"PackageContentDto": {
-				"description": "Imported map content (exported unchanged), or an operator-provided editor-only icon library.",
+				"description": "Imported map content and files from TAK apps (exported unchanged), or an editor-only icon library.",
 				"properties": {
 					"id": {
 						"$ref": "#/components/schemas/Uuid"
@@ -9645,7 +9891,8 @@
 							"offline-map",
 							"nested-data-package",
 							"rubber-sheet",
-							"icon-library"
+							"icon-library",
+							"file"
 						]
 					},
 					"name": {
@@ -10317,7 +10564,7 @@
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
-		"version": "0.3.1",
+		"version": "0.3.2",
 		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
 		"license": {
 			"name": "AGPL-3.0-only"
@@ -14506,6 +14753,53 @@
 					},
 					{
 						"apiClientBearer": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/system-status": {
+			"get": {
+				"operationId": "GetSystemStatus",
+				"responses": {
+					"200": {
+						"description": "System status",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SystemStatusDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Health overview for operators: database, data disk, TAK server, its certificate and recent\nerrors, with a few numbers. Requires instance-wide `server-logs.read`.",
+				"tags": [
+					"Operations"
+				],
+				"security": [
+					{
+						"sessionCookie": []
 					}
 				],
 				"parameters": []

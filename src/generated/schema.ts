@@ -827,6 +827,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Health overview for operators: database, data disk, TAK server, its certificate and recent
+         *     errors, with a few numbers. Requires instance-wide `server-logs.read`.
+         */
+        get: operations["GetSystemStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/setup": {
         parameters: {
             query?: never;
@@ -3243,6 +3263,16 @@ export interface components {
             lat: number;
             /** Format: double */
             lon: number;
+            /**
+             * Format: double
+             * @description Direction of travel in degrees clockwise from true north (CoT `track/course`), or null when not sent.
+             */
+            course: number | null;
+            /**
+             * Format: double
+             * @description Ground speed in metres per second (CoT `track/speed`), or null when not sent.
+             */
+            speed: number | null;
             /** Format: date-time */
             time: string;
             /** Format: date-time */
@@ -3666,6 +3696,120 @@ export interface components {
                 key: string;
             }[];
         };
+        /**
+         * @description `off` marks a part that is switched off on purpose, such as a disabled TAK server.
+         * @enum {string}
+         */
+        SystemCheckState: "ok" | "warning" | "error" | "off";
+        SystemCheckDto: {
+            /** @enum {string} */
+            id: "database" | "storage" | "tak-server" | "tak-certificate" | "errors";
+            state: components["schemas"]["SystemCheckState"];
+            /** @description One plain sentence for operators; never contains secrets. */
+            detail: string;
+        };
+        /** @enum {string} */
+        ServerLogLevel: "trace" | "debug" | "info" | "warn" | "error" | "fatal";
+        /** @description A stored warning or error, sanitized like the server log. */
+        LoggedProblemDto: {
+            time: string | null;
+            level: components["schemas"]["ServerLogLevel"];
+            message: string;
+            /** @description Structured fields as JSON, or null. */
+            details: string | null;
+        };
+        /**
+         * @description Whether system CPU and memory are the container's (cgroup) or the whole machine's.
+         * @enum {string}
+         */
+        MetricScope: "container" | "host";
+        MetricSampleDto: {
+            time: string;
+            /**
+             * Format: double
+             * @description CPU used by the Core process, as a share of the CPUs it may use (0–100).
+             */
+            coreCpuPercent: number;
+            /**
+             * Format: double
+             * @description CPU used by the container (against its CPU limit) or the machine, 0–100; see `scope`.
+             */
+            systemCpuPercent: number;
+            /**
+             * Format: double
+             * @description Resident memory of the Core process.
+             */
+            coreMemoryBytes: number;
+            /**
+             * Format: double
+             * @description Memory in use by the container or the machine; see `scope`.
+             */
+            systemMemoryUsedBytes: number;
+            /**
+             * Format: double
+             * @description The container's memory limit (at most the machine's memory) or the machine's memory.
+             */
+            systemMemoryTotalBytes: number;
+            /** Format: double */
+            takConnections: number;
+        };
+        SystemStatusDto: {
+            /** @description Core release version. */
+            version: string;
+            startedAt: string;
+            checks: components["schemas"]["SystemCheckDto"][];
+            /**
+             * Format: double
+             * @description Database round trip of a trivial query in milliseconds; null when it failed.
+             */
+            databaseLatencyMs: number | null;
+            /**
+             * Format: double
+             * @description Size of the SQLite database file in bytes; null when unknown.
+             */
+            databaseBytes: number | null;
+            /**
+             * Format: double
+             * @description Bytes of stored files (Data Package content, icon sets).
+             */
+            storedFileBytes: number;
+            /**
+             * Format: double
+             * @description Free and total bytes on the disk that holds the data directory; null when unknown.
+             */
+            diskFreeBytes: number | null;
+            /** Format: double */
+            diskTotalBytes: number | null;
+            /**
+             * Format: double
+             * @description Resident memory of the Core process in bytes.
+             */
+            memoryBytes: number;
+            /**
+             * Format: double
+             * @description Open TAK connections (streaming) right now.
+             */
+            takConnections: number;
+            /** Format: double */
+            activeEvents: number;
+            /**
+             * Format: double
+             * @description Errors (including fatal) logged in the last 24 hours, also before a restart.
+             */
+            recentErrors: number;
+            /** Format: double */
+            recentWarnings: number;
+            /** @description Stored warnings and errors of the last seven days, newest first, at most 100. */
+            problems: components["schemas"]["LoggedProblemDto"][];
+            /**
+             * Format: double
+             * @description Seconds between two samples of `history`.
+             */
+            sampleIntervalSeconds: number;
+            metricScope: components["schemas"]["MetricScope"];
+            /** @description CPU, memory and TAK connections of the last six hours since Core started, oldest first. */
+            history: components["schemas"]["MetricSampleDto"][];
+        };
         SetupStatusResponse: {
             /** @description `false` until the first administrator exists; the Web app then opens the setup flow. */
             configured: boolean;
@@ -3978,8 +4122,6 @@ export interface components {
             mappings: components["schemas"]["PresetTargetMappingDto"][];
             confirmation: string;
         };
-        /** @enum {string} */
-        ServerLogLevel: "trace" | "debug" | "info" | "warn" | "error" | "fatal";
         ServerLogEntryDto: {
             /**
              * Format: double
@@ -6069,12 +6211,12 @@ export interface components {
             /** Format: double */
             tiles: number;
         };
-        /** @description Imported map content (exported unchanged), or an operator-provided editor-only icon library. */
+        /** @description Imported map content and files from TAK apps (exported unchanged), or an editor-only icon library. */
         PackageContentDto: {
             id: components["schemas"]["Uuid"];
             layerId: components["schemas"]["Uuid"];
             /** @enum {string} */
-            kind: "offline-map" | "nested-data-package" | "rubber-sheet" | "icon-library";
+            kind: "offline-map" | "nested-data-package" | "rubber-sheet" | "icon-library" | "file";
             name: string;
             /**
              * Format: double
@@ -9292,6 +9434,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AtakPreferenceCatalogDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetSystemStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description System status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemStatusDto"];
                 };
             };
             /** @description Authentication required */
