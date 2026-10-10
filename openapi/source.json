@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/OpenMeshTAK/openmeshtak",
-  "tag": "v0.2.2",
+  "tag": "v0.3.0",
   "path": "openapi/openapi.json",
-  "sha256": "503eff21c1e45e320bc4739a8f9959c9a961c2807078ca140012556b4eba6fb1"
+  "sha256": "c3d28591e8b5742a2b8ca1d4ac607213dcbb5b76983cc78a41921b9bba5d0c28"
 }

@@ -259,9 +259,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Requires `tak-traffic.view` for the event. */
+        /** @description Requires `tak-traffic.view`, `tak-traffic.history` or `tak-traffic.recording` for the event. */
         get: operations["GetTakTrafficRecording"];
-        /** @description Turns recording on or off and sets the retention in days. Requires `events.manage`. */
+        /** @description Turns recording on or off and sets the retention in days. Requires `tak-traffic.recording`. */
         put: operations["UpdateTakTrafficRecording"];
         post?: never;
         delete?: never;
@@ -279,7 +279,7 @@ export interface paths {
         };
         /**
          * @description The recorded positions and markers as a GeoJSON FeatureCollection, oldest first, at most
-         *     50,000 items. Requires `tak-traffic.view`; every export is audited.
+         *     50,000 items. Requires `tak-traffic.export`; every export is audited.
          */
         get: operations["ExportTakTraffic"];
         put?: never;
@@ -302,7 +302,7 @@ export interface paths {
          *     and split wherever positions are more than `gapSeconds` apart, jump implausibly or are only
          *     approximate. `groupId` keeps positions sent by members of one event group; `uid` keeps one
          *     track. At most 20,000 positions, oldest first; `truncated` says the newest are missing.
-         *     Requires `tak-traffic.view`; every request is audited.
+         *     Requires `tak-traffic.history`; every request is audited.
          */
         get: operations["GetTakTrafficHistory"];
         put?: never;
@@ -323,7 +323,7 @@ export interface paths {
         /**
          * @description The same tracks as GeoJSON (one feature per continuous segment) or GPX (one track per UID,
          *     one segment per continuous part, approximate positions as waypoints), at most 50,000
-         *     positions. Requires `tak-traffic.view`; every export is audited.
+         *     positions. Requires `tak-traffic.export`; every export is audited.
          */
         get: operations["ExportTakTracks"];
         put?: never;
@@ -346,7 +346,7 @@ export interface paths {
         post?: never;
         /**
          * @description Deletes the event's recorded traffic now instead of after the retention, or only the items of
-         *     one CoT UID. Requires `events.manage`; audited.
+         *     one CoT UID. Requires `tak-traffic.delete`; audited.
          */
         delete: operations["DeleteRecordedTakTraffic"];
         options?: never;
@@ -2953,7 +2953,7 @@ export interface components {
             token: string;
         };
         /** @enum {string} */
-        Permission: "users.read" | "users.create" | "users.edit" | "users.set-email" | "users.disable" | "users.sign-out" | "users.password-reset" | "users.setup-links" | "registration.manage" | "user-groups.read" | "user-groups.manage" | "user-group-members.manage" | "events.read" | "events.manage" | "events.reactivate" | "members.read" | "members.manage" | "members.sync" | "member-accounts.create" | "event-accounts.manage" | "member-claims.create" | "channel-keys.reveal" | "data-packages.read" | "data-packages.edit" | "data-packages.publish" | "artifacts.generate" | "artifacts.download" | "member-artifacts.download" | "tak-traffic.view" | "api-clients.manage" | "tak-server.manage" | "tak-server.admin-access" | "email.manage" | "settings.manage" | "audit.read" | "server-logs.read";
+        Permission: "users.read" | "users.create" | "users.edit" | "users.set-email" | "users.disable" | "users.sign-out" | "users.password-reset" | "users.setup-links" | "registration.manage" | "user-groups.read" | "user-groups.manage" | "user-group-members.manage" | "events.read" | "events.manage" | "events.reactivate" | "configuration.publish" | "event-groups.manage" | "event-roles.manage" | "tak-settings.manage" | "tak-groups.manage" | "meshtastic-settings.manage" | "meshtastic-channels.manage" | "presets.read" | "presets.manage" | "members.read" | "members.manage" | "members.sync" | "member-accounts.create" | "event-accounts.manage" | "member-claims.create" | "channel-keys.reveal" | "data-packages.read" | "data-packages.edit" | "data-packages.publish" | "missions.read" | "missions.edit" | "missions.publish" | "offline-snapshots.prepare" | "artifacts.generate" | "artifacts.download" | "member-artifacts.download" | "tak-traffic.view" | "tak-traffic.history" | "tak-traffic.export" | "tak-traffic.delete" | "tak-traffic.recording" | "api-clients.manage" | "tak-server.manage" | "tak-server.admin-access" | "email.manage" | "settings.manage" | "audit.read" | "server-logs.read";
         PermissionGrantDto: {
             permission: components["schemas"]["Permission"];
             /** @description Event the grant is limited to, or `null` for an instance-wide grant. */

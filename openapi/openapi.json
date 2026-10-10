@@ -363,6 +363,15 @@
 					"events.read",
 					"events.manage",
 					"events.reactivate",
+					"configuration.publish",
+					"event-groups.manage",
+					"event-roles.manage",
+					"tak-settings.manage",
+					"tak-groups.manage",
+					"meshtastic-settings.manage",
+					"meshtastic-channels.manage",
+					"presets.read",
+					"presets.manage",
 					"members.read",
 					"members.manage",
 					"members.sync",
@@ -373,10 +382,18 @@
 					"data-packages.read",
 					"data-packages.edit",
 					"data-packages.publish",
+					"missions.read",
+					"missions.edit",
+					"missions.publish",
+					"offline-snapshots.prepare",
 					"artifacts.generate",
 					"artifacts.download",
 					"member-artifacts.download",
 					"tak-traffic.view",
+					"tak-traffic.history",
+					"tak-traffic.export",
+					"tak-traffic.delete",
+					"tak-traffic.recording",
 					"api-clients.manage",
 					"tak-server.manage",
 					"tak-server.admin-access",
@@ -10300,7 +10317,7 @@
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
-		"version": "0.2.2",
+		"version": "0.3.0",
 		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
 		"license": {
 			"name": "AGPL-3.0-only"
@@ -11781,7 +11798,7 @@
 						}
 					}
 				},
-				"description": "Requires `tak-traffic.view` for the event.",
+				"description": "Requires `tak-traffic.view`, `tak-traffic.history` or `tak-traffic.recording` for the event.",
 				"tags": [
 					"TAK server"
 				],
@@ -11865,7 +11882,7 @@
 						}
 					}
 				},
-				"description": "Turns recording on or off and sets the retention in days. Requires `events.manage`.",
+				"description": "Turns recording on or off and sets the retention in days. Requires `tak-traffic.recording`.",
 				"tags": [
 					"TAK server"
 				],
@@ -11939,7 +11956,7 @@
 						}
 					}
 				},
-				"description": "The recorded positions and markers as a GeoJSON FeatureCollection, oldest first, at most\n50,000 items. Requires `tak-traffic.view`; every export is audited.",
+				"description": "The recorded positions and markers as a GeoJSON FeatureCollection, oldest first, at most\n50,000 items. Requires `tak-traffic.export`; every export is audited.",
 				"tags": [
 					"TAK server"
 				],
@@ -12015,7 +12032,7 @@
 						}
 					}
 				},
-				"description": "Recorded positions between `from` and `to` (at most 31 days), grouped into tracks per CoT UID\nand split wherever positions are more than `gapSeconds` apart, jump implausibly or are only\napproximate. `groupId` keeps positions sent by members of one event group; `uid` keeps one\ntrack. At most 20,000 positions, oldest first; `truncated` says the newest are missing.\nRequires `tak-traffic.view`; every request is audited.",
+				"description": "Recorded positions between `from` and `to` (at most 31 days), grouped into tracks per CoT UID\nand split wherever positions are more than `gapSeconds` apart, jump implausibly or are only\napproximate. `groupId` keeps positions sent by members of one event group; `uid` keeps one\ntrack. At most 20,000 positions, oldest first; `truncated` says the newest are missing.\nRequires `tak-traffic.history`; every request is audited.",
 				"tags": [
 					"TAK server"
 				],
@@ -12140,7 +12157,7 @@
 						}
 					}
 				},
-				"description": "The same tracks as GeoJSON (one feature per continuous segment) or GPX (one track per UID,\none segment per continuous part, approximate positions as waypoints), at most 50,000\npositions. Requires `tak-traffic.view`; every export is audited.",
+				"description": "The same tracks as GeoJSON (one feature per continuous segment) or GPX (one track per UID,\none segment per continuous part, approximate positions as waypoints), at most 50,000\npositions. Requires `tak-traffic.export`; every export is audited.",
 				"tags": [
 					"TAK server"
 				],
@@ -12258,7 +12275,7 @@
 						}
 					}
 				},
-				"description": "Deletes the event's recorded traffic now instead of after the retention, or only the items of\none CoT UID. Requires `events.manage`; audited.",
+				"description": "Deletes the event's recorded traffic now instead of after the retention, or only the items of\none CoT UID. Requires `tak-traffic.delete`; audited.",
 				"tags": [
 					"TAK server"
 				],
