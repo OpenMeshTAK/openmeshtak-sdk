@@ -10317,7 +10317,7 @@
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
-		"version": "0.3.0",
+		"version": "0.3.1",
 		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
 		"license": {
 			"name": "AGPL-3.0-only"
