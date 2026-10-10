@@ -603,6 +603,219 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakTrackSenderDto": {
+				"description": "The OpenMeshTak user whose TAK app sent a track, with their event group when still a member.",
+				"properties": {
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"displayName": {
+						"type": "string"
+					},
+					"eventGroupId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true
+					},
+					"eventGroupName": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"userId",
+					"displayName",
+					"eventGroupId",
+					"eventGroupName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakTrackPointDto": {
+				"description": "One recorded position on a track.",
+				"properties": {
+					"time": {
+						"type": "string",
+						"description": "When the sender says the position was taken.",
+						"format": "date-time"
+					},
+					"lat": {
+						"type": "number",
+						"format": "double"
+					},
+					"lon": {
+						"type": "number",
+						"format": "double"
+					},
+					"ce": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Circular error in metres, or null when the sender did not say."
+					},
+					"delayed": {
+						"type": "boolean",
+						"description": "Reached Core more than a minute after its own time, for example relayed over a mesh."
+					},
+					"approximate": {
+						"type": "boolean",
+						"description": "A large circular error or a human estimate; never connected to other positions."
+					}
+				},
+				"required": [
+					"time",
+					"lat",
+					"lon",
+					"ce",
+					"delayed",
+					"approximate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakTrackDto": {
+				"description": "The recorded movement of one CoT UID, such as a member's device or a marker.",
+				"properties": {
+					"uid": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"description": "Newest CoT type in the range."
+					},
+					"callsign": {
+						"type": "string",
+						"nullable": true
+					},
+					"selfReported": {
+						"type": "boolean",
+						"description": "At least one position was the app's own beacon rather than a marker it placed."
+					},
+					"sender": {
+						"$ref": "#/components/schemas/TakTrackSenderDto"
+					},
+					"pointCount": {
+						"type": "number",
+						"format": "double"
+					},
+					"duplicatesDropped": {
+						"type": "number",
+						"format": "double",
+						"description": "Positions dropped because another position of the same UID carried the same time."
+					},
+					"segments": {
+						"items": {
+							"items": {
+								"$ref": "#/components/schemas/TakTrackPointDto"
+							},
+							"type": "array"
+						},
+						"type": "array",
+						"description": "Continuous parts ordered by time. Lines are drawn only inside a segment; a gap, an implausible\njump or an approximate position starts a new one."
+					}
+				},
+				"required": [
+					"uid",
+					"type",
+					"callsign",
+					"selfReported",
+					"sender",
+					"pointCount",
+					"duplicatesDropped",
+					"segments"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakTrafficHistoryGroupDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakTrafficHistoryDto": {
+				"description": "Recorded positions of an event within a time range, grouped into tracks.",
+				"properties": {
+					"from": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"to": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"gapSeconds": {
+						"type": "number",
+						"format": "double"
+					},
+					"truncated": {
+						"type": "boolean",
+						"description": "More positions were recorded than one answer holds; the newest ones are missing."
+					},
+					"maxPoints": {
+						"type": "number",
+						"format": "double",
+						"description": "Most positions one answer contains."
+					},
+					"tracks": {
+						"items": {
+							"$ref": "#/components/schemas/TakTrackDto"
+						},
+						"type": "array"
+					},
+					"groups": {
+						"items": {
+							"$ref": "#/components/schemas/TakTrafficHistoryGroupDto"
+						},
+						"type": "array",
+						"description": "The event's groups, for filtering."
+					}
+				},
+				"required": [
+					"from",
+					"to",
+					"gapSeconds",
+					"truncated",
+					"maxPoints",
+					"tracks",
+					"groups"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakTrafficExportFormat": {
+				"type": "string",
+				"enum": [
+					"geojson",
+					"gpx"
+				]
+			},
+			"DeletedTakTrafficDto": {
+				"properties": {
+					"deleted": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"deleted"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TakServerCertificateDto": {
 				"description": "The certificate the TAK listeners present. The private key is never returned.",
 				"properties": {
@@ -686,6 +899,11 @@
 						"format": "double",
 						"description": "Lifetime of newly enrolled client certificates."
 					},
+					"unusedPackageHours": {
+						"type": "number",
+						"format": "double",
+						"description": "Hours after which a downloaded iTAK or WinTAK package that never connected is revoked."
+					},
 					"serverCertificate": {
 						"allOf": [
 							{
@@ -737,6 +955,7 @@
 					"martiPort",
 					"streamingPort",
 					"clientCertificateDays",
+					"unusedPackageHours",
 					"serverCertificate",
 					"certificateFiles",
 					"certificateDirectory",
@@ -800,6 +1019,13 @@
 						"format": "int32",
 						"minimum": 1,
 						"maximum": 825
+					},
+					"unusedPackageHours": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Hours after which a downloaded iTAK or WinTAK package that never connected is revoked; kept\nwhen omitted.",
+						"minimum": 1,
+						"maximum": 720
 					},
 					"endpointChange": {
 						"$ref": "#/components/schemas/TakEndpointChangeConfirmation",
@@ -999,14 +1225,10 @@
 						"nullable": true,
 						"description": "QR payload understood by iTAK's server scanner. It configures the SSL streaming endpoint and\niTAK then asks for the user's login. `null` with a private server certificate because the QR\ncannot carry CA trust material."
 					},
-					"itakPackageCertificateId": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/Uuid"
-							}
-						],
-						"nullable": true,
-						"description": "The still valid certificate from an earlier iTAK package download. A new package is refused\nuntil it is revoked, so each downloaded package stays one device."
+					"unusedPackageHours": {
+						"type": "number",
+						"format": "double",
+						"description": "Hours within which a downloaded iTAK or WinTAK package must connect once; otherwise its\ncertificate is revoked."
 					}
 				},
 				"required": [
@@ -1018,7 +1240,43 @@
 					"streamingPort",
 					"atakEnrollmentUrl",
 					"itakQrString",
-					"itakPackageCertificateId"
+					"unusedPackageHours"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakReportedDeviceDto": {
+				"description": "The app's own description from the `takv` and `contact` details of its position beacon. Set by\nthe app, so it names the device but proves nothing.",
+				"properties": {
+					"name": {
+						"type": "string",
+						"nullable": true,
+						"description": "Device model, e.g. `iPhone 17`."
+					},
+					"app": {
+						"type": "string",
+						"nullable": true,
+						"description": "TAK app, e.g. `iTAK` or `WinTAK-CIV`."
+					},
+					"appVersion": {
+						"type": "string",
+						"nullable": true
+					},
+					"os": {
+						"type": "string",
+						"nullable": true
+					},
+					"callsign": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"name",
+					"app",
+					"appVersion",
+					"os",
+					"callsign"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1071,6 +1329,26 @@
 						"type": "string",
 						"nullable": true
 					},
+					"firstConnectedAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "First streaming connection with this certificate; `null` while an app never connected.",
+						"format": "date-time"
+					},
+					"lastConnectedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"device": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakReportedDeviceDto"
+							}
+						],
+						"nullable": true,
+						"description": "What the app last reported about itself; `null` until it sent its own position."
+					},
 					"issuedForOldEndpoint": {
 						"type": "boolean",
 						"description": "Issued before the TAK server's host name or a port last changed; the app may still use the old\nendpoint and must enroll again."
@@ -1088,6 +1366,9 @@
 					"notAfter",
 					"revokedAt",
 					"revocationReason",
+					"firstConnectedAt",
+					"lastConnectedAt",
+					"device",
 					"issuedForOldEndpoint"
 				],
 				"type": "object",
@@ -1326,8 +1607,231 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakGroupSummaryDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"receiverCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Members that receive what is sent into the group."
+					},
+					"senderCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Members that send into the group."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"name",
+					"description",
+					"receiverCount",
+					"senderCount",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakGroupPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/TakGroupSummaryDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakGroupMemberDto": {
+				"description": "A member's place in a TAK group: receiving what is sent into it (in), sending into it (out).",
+				"properties": {
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"receive": {
+						"type": "boolean"
+					},
+					"send": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"memberId",
+					"receive",
+					"send"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakGroupDto": {
+				"description": "A free TAK group of the advanced group mode, e.g. `Medics`. Members are assigned per group;\nroles with `seesAllTakGroups` need no assignment.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"receiverCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Members that receive what is sent into the group."
+					},
+					"senderCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Members that send into the group."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"members": {
+						"items": {
+							"$ref": "#/components/schemas/TakGroupMemberDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"name",
+					"description",
+					"receiverCount",
+					"senderCount",
+					"version",
+					"createdAt",
+					"updatedAt",
+					"members"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateTakGroupRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 60
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 500
+					},
+					"members": {
+						"items": {
+							"$ref": "#/components/schemas/TakGroupMemberDto"
+						},
+						"type": "array",
+						"maxItems": 5000
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateTakGroupRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 60
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 500
+					},
+					"members": {
+						"items": {
+							"$ref": "#/components/schemas/TakGroupMemberDto"
+						},
+						"type": "array",
+						"description": "Replaces the group's members; omit to keep them. Entries with neither `receive` nor `send`\nare dropped.",
+						"maxItems": 5000
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"description"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakGroupMode": {
+				"type": "string",
+				"enum": [
+					"off",
+					"simple",
+					"advanced"
+				]
+			},
 			"TakConfigurationDto": {
-				"description": "TAK settings of a Meshtastic event. Every event sends TAK clients to the built-in TAK server;\nMeshtastic events (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's\nlocal TAK server, which carries CoT over this channel.",
+				"description": "TAK settings of an event. Every event sends TAK clients to the built-in TAK server; Meshtastic\nevents (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's local TAK\nserver, which carries CoT over the mesh channel. ATAK preferences have their own list\n(`/events/{eventId}/tak/atak-preferences`).",
 				"properties": {
 					"eventId": {
 						"$ref": "#/components/schemas/Uuid"
@@ -1340,6 +1844,14 @@
 						],
 						"nullable": true,
 						"description": "Channel for the app's \"TAK Mesh Channel\"; `null` uses the primary channel."
+					},
+					"groupMode": {
+						"$ref": "#/components/schemas/TakGroupMode",
+						"description": "`off`: every member sees the whole event. `simple`: members see only their event group.\n`advanced`: members receive what is sent into the event's TAK groups they receive from\n(`/events/{eventId}/tak/groups`). In both separating modes roles with `seesAllTakGroups` see\nand reach everyone. Applies to live connections within seconds, without publishing."
+					},
+					"groupsInApp": {
+						"type": "boolean",
+						"description": "In the advanced mode, TAK apps list their groups and may switch them on and off."
 					},
 					"version": {
 						"type": "number",
@@ -1355,6 +1867,8 @@
 				"required": [
 					"eventId",
 					"meshChannelId",
+					"groupMode",
+					"groupsInApp",
 					"version",
 					"updatedAt"
 				],
@@ -1376,11 +1890,396 @@
 							}
 						],
 						"nullable": true
+					},
+					"groupMode": {
+						"$ref": "#/components/schemas/TakGroupMode",
+						"description": "Omit to keep the current mode."
+					},
+					"groupsInApp": {
+						"type": "boolean",
+						"description": "Omit to keep the current value."
 					}
 				},
 				"required": [
 					"version",
 					"meshChannelId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakPreferenceTargetDto": {
+				"description": "Who an entry is for. Targets are event memberships, never OpenMeshTak accounts.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"event",
+							"group",
+							"role",
+							"member"
+						]
+					},
+					"id": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "The event group, role or member; `null` for the whole event."
+					}
+				},
+				"required": [
+					"type",
+					"id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakPreferenceTypeDto": {
+				"type": "string",
+				"enum": [
+					"string",
+					"boolean",
+					"integer",
+					"long",
+					"float"
+				]
+			},
+			"AtakPreferenceEntryDto": {
+				"description": "One ATAK preference the event sends, as a `.pref` file stores it.",
+				"properties": {
+					"target": {
+						"$ref": "#/components/schemas/AtakPreferenceTargetDto"
+					},
+					"preference": {
+						"type": "string",
+						"description": "The `<preference name>` group, usually `com.atakmap.app_preferences`.",
+						"maxLength": 200
+					},
+					"key": {
+						"type": "string",
+						"maxLength": 200
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceTypeDto",
+						"description": "The Java class ATAK stores; known keys must use the catalog's type."
+					},
+					"value": {
+						"type": "string",
+						"maxLength": 10000
+					}
+				},
+				"required": [
+					"target",
+					"preference",
+					"key",
+					"type",
+					"value"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakPreferenceListDto": {
+				"description": "The ATAK preferences every member's app receives through its device profile once a\nconfiguration revision is published. For one member the most specific entry wins per key:\nmember, then role, then group, then the whole event. Removing an entry does not change a device;\nset ATAK's default instead.",
+				"properties": {
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"entries": {
+						"items": {
+							"$ref": "#/components/schemas/AtakPreferenceEntryDto"
+						},
+						"type": "array"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until first saved."
+					},
+					"updatedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"eventId",
+					"entries",
+					"version",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ReplaceAtakPreferencesRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 0
+					},
+					"entries": {
+						"items": {
+							"$ref": "#/components/schemas/AtakPreferenceEntryDto"
+						},
+						"type": "array",
+						"maxItems": 2000
+					}
+				},
+				"required": [
+					"version",
+					"entries"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SkippedAtakPreferenceDto": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"key",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportAtakPreferencesResponse": {
+				"properties": {
+					"list": {
+						"$ref": "#/components/schemas/AtakPreferenceListDto"
+					},
+					"importedCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Entries added to the whole event or replacing an event-wide entry of the same key."
+					},
+					"removedKeys": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Keys left out because OpenMeshTak sets them, they hold a secret or they belong to one person or device."
+					},
+					"invalidKeys": {
+						"items": {
+							"$ref": "#/components/schemas/SkippedAtakPreferenceDto"
+						},
+						"type": "array",
+						"description": "Keys left out because their type or value does not match what ATAK expects."
+					}
+				},
+				"required": [
+					"list",
+					"importedCount",
+					"removedKeys",
+					"invalidKeys"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportAtakPreferencesRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 0
+					},
+					"fileName": {
+						"type": "string",
+						"maxLength": 200
+					},
+					"content": {
+						"type": "string",
+						"description": "The `.pref` file's text, such as ATAK's settings export.",
+						"maxLength": 262144
+					}
+				},
+				"required": [
+					"version",
+					"fileName",
+					"content"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakCatalogValueDto": {
+				"properties": {
+					"value": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"value",
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakCatalogKeyDto": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"group": {
+						"type": "string",
+						"description": "Subgroup within the topic, such as \"Altitude\"; keys of a group are listed together."
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceTypeDto"
+					},
+					"defaultValue": {
+						"type": "string",
+						"nullable": true,
+						"description": "ATAK's own default; `null` when ATAK sets none."
+					},
+					"values": {
+						"items": {
+							"$ref": "#/components/schemas/AtakCatalogValueDto"
+						},
+						"type": "array",
+						"nullable": true,
+						"description": "Allowed values of a list; `null` for free values."
+					},
+					"numeric": {
+						"type": "boolean",
+						"description": "Text fields ATAK reads as numbers; they are still stored as strings."
+					},
+					"description": {
+						"type": "string"
+					},
+					"use": {
+						"type": "string",
+						"enum": [
+							"form",
+							"member",
+							"warning",
+							"advanced",
+							null
+						],
+						"nullable": true,
+						"description": "`form`: a ready field; `member`: only for one member; `warning`: allowed with a warning; `advanced`: hidden by default."
+					}
+				},
+				"required": [
+					"key",
+					"group",
+					"type",
+					"defaultValue",
+					"values",
+					"numeric",
+					"description",
+					"use"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakCatalogTopicDto": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"keys": {
+						"items": {
+							"$ref": "#/components/schemas/AtakCatalogKeyDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"id",
+					"title",
+					"description",
+					"keys"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakScreenItemDto": {
+				"description": "A settings item that stores no value of its own, such as a link to another settings screen.",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "The item ID that `disablePreferenceItem_<id>` and `hidePreferenceItem_<id>` name."
+					},
+					"area": {
+						"type": "string",
+						"description": "Where the item is in ATAK, such as \"Settings → Network\"."
+					},
+					"description": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"area",
+					"description"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakPreferenceCatalogDto": {
+				"description": "The ATAK preference keys this Core release knows, by topic, all in\n`com.atakmap.app_preferences`. Other keys, such as plugin keys, may still be set.\n\nEvery catalog key and every screen item can also be greyed out or hidden in ATAK's settings\nscreens with the Boolean entries `disablePreferenceItem_<key>` and `hidePreferenceItem_<key>`;\nother item IDs are refused.",
+				"properties": {
+					"atakVersion": {
+						"type": "string",
+						"description": "The ATAK version the catalog was read from."
+					},
+					"topics": {
+						"items": {
+							"$ref": "#/components/schemas/AtakCatalogTopicDto"
+						},
+						"type": "array"
+					},
+					"screenItems": {
+						"items": {
+							"$ref": "#/components/schemas/AtakScreenItemDto"
+						},
+						"type": "array",
+						"description": "Settings items without a value key that can be greyed out or hidden as well."
+					},
+					"blockedKeys": {
+						"items": {
+							"properties": {
+								"reason": {
+									"type": "string"
+								},
+								"key": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"reason",
+								"key"
+							],
+							"type": "object"
+						},
+						"type": "array",
+						"description": "Keys an event can never set, with the reason."
+					}
+				},
+				"required": [
+					"atakVersion",
+					"topics",
+					"screenItems",
+					"blockedKeys"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1463,6 +2362,936 @@
 					"username",
 					"password",
 					"token"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetKind": {
+				"type": "string",
+				"enum": [
+					"meshtastic",
+					"tak"
+				]
+			},
+			"SettingsPresetSummaryDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PresetKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"targetVersion": {
+						"type": "string",
+						"nullable": true,
+						"description": "Meshtastic firmware or ATAK version the preset was made for."
+					},
+					"itemCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of settings or ATAK preference entries."
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"kind",
+					"name",
+					"description",
+					"targetVersion",
+					"itemCount",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SettingsPresetPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/SettingsPresetSummaryDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetSourceDto": {
+				"description": "Where a preset document came from. Free text such as `note` lets a person or an assistant say\nwhat they changed; Core never acts on it.",
+				"properties": {
+					"application": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"applicationVersion": {
+						"type": "string",
+						"maxLength": 40
+					},
+					"exportedFrom": {
+						"type": "string",
+						"enum": [
+							"event",
+							"library"
+						]
+					},
+					"note": {
+						"type": "string",
+						"maxLength": 1000
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetMeshtasticSettings": {
+				"description": "Values of Meshtastic firmware-profile fields, keyed by field key.",
+				"properties": {},
+				"type": "object",
+				"additionalProperties": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number",
+							"format": "double"
+						},
+						{
+							"type": "boolean"
+						}
+					]
+				}
+			},
+			"MeshtasticPresetContentDto": {
+				"properties": {
+					"firmwareVersion": {
+						"type": "string",
+						"description": "The firmware the settings were made for, such as `2.8`. Imports check every value against the\ntarget event's own firmware profile instead.",
+						"maxLength": 20
+					},
+					"settings": {
+						"$ref": "#/components/schemas/PresetMeshtasticSettings"
+					}
+				},
+				"required": [
+					"firmwareVersion",
+					"settings"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetAtakTargetDto": {
+				"description": "Who a portable ATAK preference is for. Groups and roles are named by their slug, because their\nIDs only exist in one event; importing maps each one explicitly onto the target event.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"event",
+							"group",
+							"role"
+						]
+					},
+					"slug": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"name": {
+						"type": "string",
+						"description": "Display name in the source event.",
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"type"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetAtakPreferenceDto": {
+				"properties": {
+					"target": {
+						"$ref": "#/components/schemas/PresetAtakTargetDto"
+					},
+					"preference": {
+						"type": "string",
+						"maxLength": 200
+					},
+					"key": {
+						"type": "string",
+						"maxLength": 200
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceTypeDto"
+					},
+					"value": {
+						"type": "string",
+						"maxLength": 10000
+					}
+				},
+				"required": [
+					"target",
+					"preference",
+					"key",
+					"type",
+					"value"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakPresetContentDto": {
+				"properties": {
+					"atakVersion": {
+						"type": "string",
+						"maxLength": 40
+					},
+					"atakPreferences": {
+						"items": {
+							"$ref": "#/components/schemas/PresetAtakPreferenceDto"
+						},
+						"type": "array",
+						"maxItems": 2000
+					}
+				},
+				"required": [
+					"atakPreferences"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetDocumentDto": {
+				"description": "A portable, self-describing OpenMeshTak settings preset (`format` `openmeshtak-preset`). It is not\nan ATAK `.pref`, a Meshtastic `.cfg` or a firmware profile. It never holds channel keys,\npasswords, fixed PINs, certificates, tokens or member-specific values.",
+				"properties": {
+					"format": {
+						"type": "string",
+						"description": "Always `openmeshtak-preset`.",
+						"maxLength": 40
+					},
+					"formatVersion": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Format version; this Core reads version 1."
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PresetKind"
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"maxLength": 1000
+					},
+					"about": {
+						"type": "string",
+						"description": "Human-readable explanation of the format. Ignored on import.",
+						"maxLength": 4000
+					},
+					"exportedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"source": {
+						"$ref": "#/components/schemas/PresetSourceDto"
+					},
+					"meshtastic": {
+						"$ref": "#/components/schemas/MeshtasticPresetContentDto",
+						"description": "Present when `kind` is `meshtastic`."
+					},
+					"tak": {
+						"$ref": "#/components/schemas/TakPresetContentDto",
+						"description": "Present when `kind` is `tak`."
+					}
+				},
+				"required": [
+					"format",
+					"formatVersion",
+					"kind",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SettingsPresetDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PresetKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"targetVersion": {
+						"type": "string",
+						"nullable": true,
+						"description": "Meshtastic firmware or ATAK version the preset was made for."
+					},
+					"itemCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of settings or ATAK preference entries."
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					}
+				},
+				"required": [
+					"id",
+					"kind",
+					"name",
+					"description",
+					"targetVersion",
+					"itemCount",
+					"version",
+					"createdAt",
+					"updatedAt",
+					"document"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateSettingsPresetRequest": {
+				"properties": {
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto",
+						"description": "Name and description default to the document's."
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 1000
+					}
+				},
+				"required": [
+					"document"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateSettingsPresetRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 1000
+					},
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto",
+						"description": "Replaces the settings; omit to keep them. The kind cannot change."
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"description"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetSettingChangeDto": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"from": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							},
+							{
+								"type": "boolean"
+							}
+						],
+						"nullable": true
+					},
+					"to": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							},
+							{
+								"type": "boolean"
+							}
+						]
+					}
+				},
+				"required": [
+					"key",
+					"from",
+					"to"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetSettingProblemDto": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"key",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticPresetPreviewDto": {
+				"description": "What importing a Meshtastic preset would change in the event's draft. Only `changed` values are\nwritten; invalid and unsupported values are left out and current values stay.",
+				"properties": {
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Configuration version the preview was computed on; send it with the import."
+					},
+					"presetFirmwareVersion": {
+						"type": "string"
+					},
+					"eventFirmwareVersion": {
+						"type": "string"
+					},
+					"sameFirmwareLine": {
+						"type": "boolean",
+						"description": "`false` when the preset was made for another firmware line than the event uses."
+					},
+					"changed": {
+						"items": {
+							"$ref": "#/components/schemas/PresetSettingChangeDto"
+						},
+						"type": "array"
+					},
+					"unchanged": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"invalid": {
+						"items": {
+							"$ref": "#/components/schemas/PresetSettingProblemDto"
+						},
+						"type": "array",
+						"description": "Values the event's firmware profile rejects; the current value stays."
+					},
+					"unsupported": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Keys the event's firmware cannot set: unknown, managed by OpenMeshTak, secret or newer."
+					},
+					"notInPreset": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Settings the preset does not mention; they keep their current value."
+					},
+					"secretsKept": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Secrets set on the event. An import never changes them."
+					},
+					"confirmation": {
+						"type": "string",
+						"description": "Token to send with the import to confirm exactly this preview."
+					}
+				},
+				"required": [
+					"version",
+					"presetFirmwareVersion",
+					"eventFirmwareVersion",
+					"sameFirmwareLine",
+					"changed",
+					"unchanged",
+					"invalid",
+					"unsupported",
+					"notInPreset",
+					"secretsKept",
+					"confirmation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PreviewMeshtasticPresetRequest": {
+				"properties": {
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					}
+				},
+				"required": [
+					"document"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"FirmwareSettingsDocument": {
+				"description": "Values of a firmware profile's editable fields, keyed by field key.",
+				"properties": {},
+				"type": "object",
+				"additionalProperties": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number",
+							"format": "double"
+						},
+						{
+							"type": "boolean"
+						}
+					]
+				}
+			},
+			"ConfigurationProblemDto": {
+				"properties": {
+					"field": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"field",
+					"code",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticConfigurationDto": {
+				"properties": {
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"firmwareVersion": {
+						"type": "string",
+						"description": "Recommended firmware: a line such as `2.8` or a minimum patch such as `2.8.3`."
+					},
+					"effectiveMinimumVersion": {
+						"type": "string",
+						"nullable": true,
+						"description": "The given patch or the profile minimum; `null` when the version is no longer supported."
+					},
+					"profileId": {
+						"type": "string",
+						"nullable": true
+					},
+					"verified": {
+						"type": "boolean",
+						"description": "`false` when no tested patch reaches the effective minimum version."
+					},
+					"settings": {
+						"$ref": "#/components/schemas/FirmwareSettingsDocument"
+					},
+					"secretFields": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Secret fields available for the event's firmware version, set through `PUT secrets`."
+					},
+					"secretsSet": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Keys of secret fields that hold a value. The values themselves are never returned."
+					},
+					"problems": {
+						"items": {
+							"$ref": "#/components/schemas/ConfigurationProblemDto"
+						},
+						"type": "array",
+						"description": "Why the stored configuration is not valid for this Core release; empty when it is."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until the configuration is first saved."
+					},
+					"updatedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"eventId",
+					"firmwareVersion",
+					"effectiveMinimumVersion",
+					"profileId",
+					"verified",
+					"settings",
+					"secretFields",
+					"secretsSet",
+					"problems",
+					"version",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApplyMeshtasticPresetRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the preview returned.",
+						"minimum": 0
+					},
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					},
+					"confirmation": {
+						"type": "string",
+						"maxLength": 100
+					}
+				},
+				"required": [
+					"version",
+					"document",
+					"confirmation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetTargetDto": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"group",
+							"role"
+						]
+					},
+					"slug": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"entryCount": {
+						"type": "number",
+						"format": "double"
+					},
+					"suggestedTargetId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "A group or role of the target event with the same slug or name; never applied unless mapped."
+					},
+					"mapping": {
+						"properties": {
+							"targetId": {
+								"allOf": [
+									{
+										"$ref": "#/components/schemas/Uuid"
+									}
+								],
+								"nullable": true
+							}
+						},
+						"required": [
+							"targetId"
+						],
+						"type": "object",
+						"description": "The mapping sent with this preview; absent while unmapped."
+					}
+				},
+				"required": [
+					"type",
+					"slug",
+					"name",
+					"entryCount",
+					"suggestedTargetId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetEntryChangeDto": {
+				"properties": {
+					"target": {
+						"$ref": "#/components/schemas/AtakPreferenceTargetDto"
+					},
+					"preference": {
+						"type": "string"
+					},
+					"key": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceTypeDto"
+					},
+					"from": {
+						"type": "string",
+						"nullable": true,
+						"description": "The event's current value for the same target and key; `null` when the key is new."
+					},
+					"to": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"target",
+					"preference",
+					"key",
+					"type",
+					"from",
+					"to"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetEntryProblemDto": {
+				"properties": {
+					"target": {
+						"$ref": "#/components/schemas/PresetAtakTargetDto"
+					},
+					"key": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"target",
+					"key",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakPresetPreviewDto": {
+				"description": "What importing a TAK preset would change in the event's ATAK preference draft. Entries are merged:\na preset entry replaces the event's entry for the same target and key, other entries stay.",
+				"properties": {
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "ATAK preference list version the preview was computed on; send it with the import."
+					},
+					"presetAtakVersion": {
+						"type": "string",
+						"nullable": true
+					},
+					"catalogAtakVersion": {
+						"type": "string"
+					},
+					"targets": {
+						"items": {
+							"$ref": "#/components/schemas/PresetTargetDto"
+						},
+						"type": "array",
+						"description": "Groups and roles the preset targets; each needs an explicit mapping."
+					},
+					"added": {
+						"items": {
+							"$ref": "#/components/schemas/PresetEntryChangeDto"
+						},
+						"type": "array"
+					},
+					"changed": {
+						"items": {
+							"$ref": "#/components/schemas/PresetEntryChangeDto"
+						},
+						"type": "array"
+					},
+					"unchanged": {
+						"type": "number",
+						"format": "double"
+					},
+					"invalid": {
+						"items": {
+							"$ref": "#/components/schemas/PresetEntryProblemDto"
+						},
+						"type": "array",
+						"description": "Entries the catalog or the target event rejects; they are left out."
+					},
+					"skipped": {
+						"type": "number",
+						"format": "double",
+						"description": "Entries of groups or roles mapped to `null`."
+					},
+					"confirmation": {
+						"type": "string",
+						"nullable": true,
+						"description": "`null` until every group and role is mapped."
+					}
+				},
+				"required": [
+					"version",
+					"presetAtakVersion",
+					"catalogAtakVersion",
+					"targets",
+					"added",
+					"changed",
+					"unchanged",
+					"invalid",
+					"skipped",
+					"confirmation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetTargetMappingDto": {
+				"description": "Maps a group or role of a preset onto the target event; `targetId` `null` leaves its entries out.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"group",
+							"role"
+						]
+					},
+					"slug": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"targetId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"type",
+					"slug",
+					"targetId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PreviewTakPresetRequest": {
+				"properties": {
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					},
+					"mappings": {
+						"items": {
+							"$ref": "#/components/schemas/PresetTargetMappingDto"
+						},
+						"type": "array",
+						"maxItems": 500
+					}
+				},
+				"required": [
+					"document"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApplyTakPresetRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the preview returned.",
+						"minimum": 0
+					},
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					},
+					"mappings": {
+						"items": {
+							"$ref": "#/components/schemas/PresetTargetMappingDto"
+						},
+						"type": "array",
+						"maxItems": 500
+					},
+					"confirmation": {
+						"type": "string",
+						"maxLength": 100
+					}
+				},
+				"required": [
+					"version",
+					"document",
+					"mappings",
+					"confirmation"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -2160,6 +3989,1235 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DataPackageKind": {
+				"type": "string",
+				"enum": [
+					"package",
+					"mission"
+				],
+				"description": "`package`: a Data Package, published as revisions and installed by members. `mission`: an ATAK\nData Sync mission edited with the same editor; each revision is synced to subscribed TAK apps."
+			},
+			"PackageSnapshotLayer": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"sortOrder": {
+						"type": "number",
+						"format": "double"
+					},
+					"visible": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"sortOrder",
+					"visible"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageObjectKind": {
+				"type": "string",
+				"enum": [
+					"point",
+					"line",
+					"polygon",
+					"circle",
+					"rectangle",
+					"ellipse",
+					"route"
+				]
+			},
+			"Position": {
+				"items": {
+					"type": "number",
+					"format": "double"
+				},
+				"type": "array",
+				"description": "GeoJSON position: `[longitude, latitude]` or `[longitude, latitude, altitudeMetresHae]`.",
+				"minItems": 2,
+				"maxItems": 3
+			},
+			"PointGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Point"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position"
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LineStringGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"LineString"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PolygonGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Polygon"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"items": {
+								"$ref": "#/components/schemas/Position"
+							},
+							"type": "array"
+						},
+						"type": "array",
+						"description": "Outer ring first, then holes; every ring repeats its first position at the end."
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CircleGeometry": {
+				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\na silently approximated polygon and maps to ATAK `u-d-c-c` circles.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Circle"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position",
+						"description": "Centre position."
+					},
+					"radius": {
+						"type": "number",
+						"format": "double",
+						"description": "Radius in metres.",
+						"minimum": 0.1,
+						"maximum": 100000
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"radius"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RectangleGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Rectangle"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array",
+						"description": "Four corners in drawing order, without a repeated closing position."
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EllipseGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Ellipse"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position",
+						"description": "Centre; axes are semi-axis lengths, matching TAK's ellipse major/minor."
+					},
+					"major": {
+						"type": "number",
+						"format": "double",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"minor": {
+						"type": "number",
+						"format": "double",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"rotation": {
+						"type": "number",
+						"format": "double",
+						"description": "Bearing of the major axis clockwise from north, in degrees.",
+						"minimum": 0,
+						"maximum": 360
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"major",
+					"minor",
+					"rotation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RoutePointId": {
+				"type": "string",
+				"description": "TAK routes refer to their own stable point identifiers in navigation cues.",
+				"minLength": 1,
+				"maxLength": 128,
+				"pattern": "^[^\\u0000-\\u001f]+$"
+			},
+			"RoutePoint": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/RoutePointId"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"waypoint",
+							"checkpoint"
+						]
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"remarks": {
+						"type": "string",
+						"maxLength": 2000
+					}
+				},
+				"required": [
+					"id",
+					"type",
+					"name",
+					"remarks"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteOption": {
+				"type": "string",
+				"maxLength": 64
+			},
+			"RouteOptions": {
+				"properties": {
+					"transportationType": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"method": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"direction": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"routeType": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"order": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"planningMethod": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"prefix": {
+						"$ref": "#/components/schemas/RouteOption"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteCueTrigger": {
+				"properties": {
+					"mode": {
+						"type": "string",
+						"enum": [
+							"d",
+							"t"
+						]
+					},
+					"value": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 2147483647
+					}
+				},
+				"required": [
+					"mode",
+					"value"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteNavigationCue": {
+				"properties": {
+					"pointId": {
+						"$ref": "#/components/schemas/RoutePointId"
+					},
+					"text": {
+						"type": "string",
+						"maxLength": 2000
+					},
+					"voice": {
+						"type": "string",
+						"maxLength": 2000
+					},
+					"triggers": {
+						"items": {
+							"$ref": "#/components/schemas/RouteCueTrigger"
+						},
+						"type": "array",
+						"maxItems": 16
+					}
+				},
+				"required": [
+					"pointId",
+					"text",
+					"voice",
+					"triggers"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Route"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array",
+						"description": "Ordered route positions; each has matching metadata in `points`."
+					},
+					"points": {
+						"items": {
+							"$ref": "#/components/schemas/RoutePoint"
+						},
+						"type": "array",
+						"maxItems": 10000
+					},
+					"options": {
+						"$ref": "#/components/schemas/RouteOptions"
+					},
+					"navigationCues": {
+						"items": {
+							"$ref": "#/components/schemas/RouteNavigationCue"
+						},
+						"type": "array",
+						"maxItems": 1000
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"points",
+					"options",
+					"navigationCues"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageGeometry": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/PointGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/LineStringGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/PolygonGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/CircleGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/RectangleGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/EllipseGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/RouteGeometry"
+					}
+				],
+				"description": "RFC 7946 semantics in WGS84, with explicit parametric shapes and ordered TAK routes."
+			},
+			"HexColor": {
+				"type": "string",
+				"description": "Colour as `#RRGGBB`.",
+				"pattern": "^#[0-9A-Fa-f]{6}$"
+			},
+			"StrokeStyle": {
+				"type": "string",
+				"enum": [
+					"solid",
+					"dashed",
+					"dotted",
+					"outlined",
+					"custom"
+				],
+				"description": "How lines, outlines and circles are drawn; ATAK writes it as `strokeStyle`."
+			},
+			"HeightUnit": {
+				"type": "number",
+				"enum": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				],
+				"description": "ATAK Span display units; the stored height itself is always metres."
+			},
+			"ExtrudeMode": {
+				"type": "string",
+				"enum": [
+					"cylinder",
+					"cone_down"
+				]
+			},
+			"ArrowHeads": {
+				"type": "string",
+				"enum": [
+					"none",
+					"start",
+					"end",
+					"both"
+				]
+			},
+			"DistanceUnit": {
+				"type": "string",
+				"enum": [
+					"m",
+					"km",
+					"ft",
+					"mi",
+					"nm"
+				]
+			},
+			"SectorStyle": {
+				"properties": {
+					"heading": {
+						"type": "number",
+						"format": "double",
+						"description": "True heading clockwise from north.",
+						"minimum": 0,
+						"maximum": 360
+					},
+					"sweep": {
+						"type": "number",
+						"format": "double",
+						"minimum": 1,
+						"maximum": 360
+					},
+					"radius": {
+						"type": "number",
+						"format": "double",
+						"description": "Metres.",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"rangeLines": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"minimum": 1,
+						"maximum": 60000
+					},
+					"displayLabels": {
+						"type": "boolean"
+					},
+					"visible": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"heading",
+					"sweep",
+					"radius"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BullseyeStyle": {
+				"properties": {
+					"ringDistance": {
+						"type": "number",
+						"format": "double",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"ringCount": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 10
+					},
+					"ringsVisible": {
+						"type": "boolean"
+					},
+					"edgeToCenter": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"ringDistance",
+					"ringCount",
+					"ringsVisible",
+					"edgeToCenter"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.string_": {
+				"properties": {},
+				"additionalProperties": {
+					"type": "string"
+				},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"TacticalGraphicStyle": {
+				"description": "Source-confirmed 2525D control measures; this deliberately excludes single-point symbols.",
+				"properties": {
+					"sidc": {
+						"type": "string",
+						"pattern": "^11[0-9]{18}$"
+					},
+					"modifiers": {
+						"$ref": "#/components/schemas/Record_string.string_",
+						"description": "Native __milsym unitmodifier codes, bounded and validated against the selected graphic."
+					}
+				},
+				"required": [
+					"sidc",
+					"modifiers"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageObjectStyle": {
+				"properties": {
+					"color": {
+						"$ref": "#/components/schemas/HexColor",
+						"description": "Marker, line and polygon outline colour."
+					},
+					"strokeWidth": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Line and outline width in pixels.",
+						"minimum": 1,
+						"maximum": 20
+					},
+					"fillOpacity": {
+						"type": "number",
+						"format": "double",
+						"description": "Polygon and circle fill opacity.",
+						"minimum": 0,
+						"maximum": 1
+					},
+					"strokeStyle": {
+						"$ref": "#/components/schemas/StrokeStyle",
+						"description": "Line style of lines, outlines and circles; `solid` when left out."
+					},
+					"fillColor": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/HexColor"
+							}
+						],
+						"nullable": true,
+						"description": "Fill colour of areas and circles; `null` or left out fills with `color`."
+					},
+					"height": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Shape extrusion height in metres, independent of coordinate altitude. Null/absent is unknown.",
+						"minimum": -100000,
+						"maximum": 100000
+					},
+					"heightUnit": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/HeightUnit"
+							}
+						],
+						"nullable": true,
+						"description": "Preferred TAK height display unit (0 km, 1 m, 2 mi, 3 yd, 4 ft, 5 NM)."
+					},
+					"extrudeMode": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/ExtrudeMode"
+							}
+						],
+						"nullable": true,
+						"description": "Circle extrusion mode; absent uses the client's default."
+					},
+					"arrowHeads": {
+						"$ref": "#/components/schemas/ArrowHeads",
+						"description": "Endpoint arrowheads for lines; absent means none. CoT/KML export the underlying line."
+					},
+					"arrowHeadSize": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Arrowhead length in screen pixels, independent of map zoom.",
+						"minimum": 6,
+						"maximum": 64
+					},
+					"routeDirectionArrows": {
+						"type": "boolean",
+						"description": "Direction indicators following route point order; absent means false. Web presentation only."
+					},
+					"routeArrowSpacing": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Distance between route indicators in screen pixels.",
+						"minimum": 24,
+						"maximum": 256
+					},
+					"rangeBearing": {
+						"type": "boolean",
+						"description": "Saved, exactly two-point true Range & Bearing line."
+					},
+					"distanceUnit": {
+						"$ref": "#/components/schemas/DistanceUnit"
+					},
+					"sector": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/SectorStyle"
+							}
+						],
+						"nullable": true,
+						"description": "Coverage sector centred at a Point; polygon export is an approximation."
+					},
+					"corridorWidth": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Full corridor width in metres around a line/route; null disables it.",
+						"minimum": 1,
+						"maximum": 10000
+					},
+					"dashPattern": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array",
+						"nullable": true,
+						"description": "Alternating dash/gap lengths in screen pixels; custom line style only.",
+						"minItems": 2,
+						"maxItems": 8
+					},
+					"labelVisible": {
+						"type": "boolean",
+						"description": "Marker hideLabel / shape labels_on; defaults to visible."
+					},
+					"rangeCircle": {
+						"type": "boolean",
+						"description": "Native u-r-b-c-c presentation of Circle geometry."
+					},
+					"rangeRings": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 10
+					},
+					"bullseye": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/BullseyeStyle"
+							}
+						],
+						"nullable": true
+					},
+					"bearingUnit": {
+						"type": "string",
+						"enum": [
+							"degrees",
+							"mils",
+							"radians",
+							"warsaw-mils",
+							"streck",
+							"clock"
+						]
+					},
+					"minimumSafeDistance": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Distance outside a shape in metres; native MSD. Incompatible with route/R&B/bullseye.",
+						"minimum": 0.1,
+						"maximum": 5000
+					},
+					"msdColor": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/HexColor"
+							}
+						],
+						"nullable": true
+					},
+					"tacticalGraphic": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TacticalGraphicStyle"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"color",
+					"strokeWidth",
+					"fillOpacity"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CotType": {
+				"type": "string",
+				"description": "CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly\ninfantry).",
+				"pattern": "^[a-z](-[A-Za-z0-9]+){1,15}$",
+				"maxLength": 64
+			},
+			"TakMarker": {
+				"description": "Optional TAK presentation of a marker, kept so ATAK packages round-trip without loss.",
+				"properties": {
+					"cotType": {
+						"$ref": "#/components/schemas/CotType",
+						"description": "Defaults to the spot marker `b-m-p-s-m`; `a-*` types are drawn as military symbols."
+					},
+					"iconsetPath": {
+						"type": "string",
+						"nullable": true,
+						"description": "ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom\nicon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.",
+						"pattern": "^[^\\u0000-\\u001f<>\"]+$",
+						"maxLength": 256
+					}
+				},
+				"required": [
+					"cotType",
+					"iconsetPath"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageSnapshotObject": {
+				"properties": {
+					"supplementParent": {
+						"type": "string",
+						"description": "Derived export-only visual association; never written into canonical draft objects."
+					},
+					"id": {
+						"type": "string"
+					},
+					"layerId": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PackageObjectKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/PackageGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/PackageObjectStyle"
+					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakMarker"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"description",
+					"geometry",
+					"style",
+					"tak"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineTileContentDto": {
+				"description": "An ATAK tile cache of the revision, copied tile by tile through the tiles endpoint.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"type": "string",
+						"enum": [
+							"tiles"
+						],
+						"nullable": false
+					},
+					"name": {
+						"type": "string"
+					},
+					"minZoom": {
+						"type": "number",
+						"format": "double"
+					},
+					"maxZoom": {
+						"type": "number",
+						"format": "double"
+					},
+					"bounds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array",
+						"description": "West, south, east, north in WGS84 degrees."
+					},
+					"tiles": {
+						"type": "number",
+						"format": "double"
+					},
+					"size": {
+						"type": "number",
+						"format": "double",
+						"description": "Size of the stored cache in bytes; the tiles alone usually need less."
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"minZoom",
+					"maxZoom",
+					"bounds",
+					"tiles",
+					"size"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineImageContentDto": {
+				"description": "A rubber sheet of the revision, downloaded as one image through the image endpoint.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"type": "string",
+						"enum": [
+							"image"
+						],
+						"nullable": false
+					},
+					"name": {
+						"type": "string"
+					},
+					"corners": {
+						"items": {
+							"items": {
+								"type": "number",
+								"format": "double"
+							},
+							"type": "array"
+						},
+						"type": "array",
+						"description": "Lower left, lower right, upper right and upper left corner as [longitude, latitude]."
+					},
+					"mediaType": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg"
+						]
+					},
+					"sha256": {
+						"type": "string",
+						"description": "SHA-256 of the image bytes, checked by the browser after the download."
+					},
+					"size": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"corners",
+					"mediaType",
+					"sha256",
+					"size"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineContentDto": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/OfflineTileContentDto"
+					},
+					{
+						"$ref": "#/components/schemas/OfflineImageContentDto"
+					}
+				]
+			},
+			"OfflineSkippedContentDto": {
+				"description": "Content of the revision that the offline view cannot show, listed so nothing is dropped silently.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"kind": {
+						"type": "string"
+					},
+					"reason": {
+						"type": "string",
+						"enum": [
+							"not-displayable",
+							"unreadable"
+						]
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"kind",
+					"reason"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineSnapshotPackageDto": {
+				"properties": {
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/DataPackageKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"revision": {
+						"type": "number",
+						"format": "double"
+					},
+					"revisionId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"snapshotHash": {
+						"type": "string",
+						"description": "SHA-256 of the published revision snapshot, for provenance."
+					},
+					"publishedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"layers": {
+						"items": {
+							"$ref": "#/components/schemas/PackageSnapshotLayer"
+						},
+						"type": "array"
+					},
+					"objects": {
+						"items": {
+							"$ref": "#/components/schemas/PackageSnapshotObject"
+						},
+						"type": "array"
+					},
+					"contents": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineContentDto"
+						},
+						"type": "array"
+					},
+					"skippedContents": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineSkippedContentDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"packageId",
+					"kind",
+					"name",
+					"revision",
+					"revisionId",
+					"snapshotHash",
+					"publishedAt",
+					"layers",
+					"objects",
+					"contents",
+					"skippedContents"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineSnapshotDto": {
+				"description": "Everything the browser stores for the offline HQ view of one event: published revisions only,\nnever drafts, credentials, certificates, channel keys or member data.",
+				"properties": {
+					"format": {
+						"type": "number",
+						"format": "double",
+						"description": "Version of this document; the browser refuses formats it does not know."
+					},
+					"event": {
+						"properties": {
+							"timeZone": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"$ref": "#/components/schemas/Uuid"
+							}
+						},
+						"required": [
+							"timeZone",
+							"name",
+							"id"
+						],
+						"type": "object"
+					},
+					"preparedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"packages": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineSnapshotPackageDto"
+						},
+						"type": "array"
+					},
+					"skippedPackages": {
+						"items": {
+							"properties": {
+								"reason": {
+									"type": "string",
+									"enum": [
+										"not-published"
+									],
+									"nullable": false
+								},
+								"name": {
+									"type": "string"
+								},
+								"packageId": {
+									"$ref": "#/components/schemas/Uuid"
+								}
+							},
+							"required": [
+								"reason",
+								"name",
+								"packageId"
+							],
+							"type": "object"
+						},
+						"type": "array",
+						"description": "Selected packages without a published revision."
+					},
+					"estimatedBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "Approximate bytes the browser has to store: tile caches plus images."
+					}
+				},
+				"required": [
+					"format",
+					"event",
+					"preparedAt",
+					"packages",
+					"skippedPackages",
+					"estimatedBytes"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineSnapshotSelection": {
+				"properties": {
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"revision": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Published revision to take; the newest one when omitted.",
+						"minimum": 1
+					}
+				},
+				"required": [
+					"packageId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateOfflineSnapshotRequest": {
+				"properties": {
+					"packages": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineSnapshotSelection"
+						},
+						"type": "array",
+						"description": "Published Data Packages or missions to make available offline.",
+						"minItems": 1,
+						"maxItems": 50
+					}
+				},
+				"required": [
+					"packages"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineTileDto": {
+				"properties": {
+					"z": {
+						"type": "number",
+						"format": "double"
+					},
+					"x": {
+						"type": "number",
+						"format": "double"
+					},
+					"y": {
+						"type": "number",
+						"format": "double"
+					},
+					"mediaType": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg"
+						]
+					},
+					"data": {
+						"type": "string",
+						"description": "Base64-encoded tile image."
+					},
+					"sha256": {
+						"type": "string",
+						"description": "SHA-256 of the decoded tile bytes, checked by the browser."
+					}
+				},
+				"required": [
+					"z",
+					"x",
+					"y",
+					"mediaType",
+					"data",
+					"sha256"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineTilePage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineTileDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"FirmwareReleaseDto": {
 				"properties": {
 					"version": {
@@ -2527,118 +5585,6 @@
 					"sections",
 					"fields",
 					"enums"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"FirmwareSettingsDocument": {
-				"description": "Values of a firmware profile's editable fields, keyed by field key.",
-				"properties": {},
-				"type": "object",
-				"additionalProperties": {
-					"anyOf": [
-						{
-							"type": "string"
-						},
-						{
-							"type": "number",
-							"format": "double"
-						},
-						{
-							"type": "boolean"
-						}
-					]
-				}
-			},
-			"ConfigurationProblemDto": {
-				"properties": {
-					"field": {
-						"type": "string"
-					},
-					"code": {
-						"type": "string"
-					},
-					"message": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"field",
-					"code",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MeshtasticConfigurationDto": {
-				"properties": {
-					"eventId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"firmwareVersion": {
-						"type": "string",
-						"description": "Recommended firmware: a line such as `2.8` or a minimum patch such as `2.8.3`."
-					},
-					"effectiveMinimumVersion": {
-						"type": "string",
-						"nullable": true,
-						"description": "The given patch or the profile minimum; `null` when the version is no longer supported."
-					},
-					"profileId": {
-						"type": "string",
-						"nullable": true
-					},
-					"verified": {
-						"type": "boolean",
-						"description": "`false` when no tested patch reaches the effective minimum version."
-					},
-					"settings": {
-						"$ref": "#/components/schemas/FirmwareSettingsDocument"
-					},
-					"secretFields": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array",
-						"description": "Secret fields available for the event's firmware version, set through `PUT secrets`."
-					},
-					"secretsSet": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array",
-						"description": "Keys of secret fields that hold a value. The values themselves are never returned."
-					},
-					"problems": {
-						"items": {
-							"$ref": "#/components/schemas/ConfigurationProblemDto"
-						},
-						"type": "array",
-						"description": "Why the stored configuration is not valid for this Core release; empty when it is."
-					},
-					"version": {
-						"type": "number",
-						"format": "double",
-						"description": "Optimistic-concurrency version; 0 until the configuration is first saved."
-					},
-					"updatedAt": {
-						"type": "string",
-						"nullable": true,
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"eventId",
-					"firmwareVersion",
-					"effectiveMinimumVersion",
-					"profileId",
-					"verified",
-					"settings",
-					"secretFields",
-					"secretsSet",
-					"problems",
-					"version",
-					"updatedAt"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -3300,47 +6246,9 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"MapSettingsDto": {
-				"description": "The Web map's online base map. Defaults to OpenStreetMap until an administrator changes it.",
+			"BaseMapLayerDto": {
+				"description": "One mutually exclusive XYZ base map; package overlays remain separate.",
 				"properties": {
-					"providerName": {
-						"type": "string"
-					},
-					"tileUrlTemplate": {
-						"type": "string",
-						"description": "XYZ tile URL with `{z}`, `{x}` and `{y}`; `{a-c}` selects subdomains."
-					},
-					"attribution": {
-						"type": "string",
-						"description": "Plain-text attribution the provider requires; the Web app shows it on every map."
-					},
-					"maxZoom": {
-						"type": "number",
-						"format": "double"
-					},
-					"version": {
-						"type": "number",
-						"format": "double",
-						"description": "Optimistic-concurrency version; 0 while the default is in use."
-					}
-				},
-				"required": [
-					"providerName",
-					"tileUrlTemplate",
-					"attribution",
-					"maxZoom",
-					"version"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpdateMapSettingsRequest": {
-				"properties": {
-					"version": {
-						"type": "integer",
-						"format": "int32",
-						"minimum": 0
-					},
 					"providerName": {
 						"type": "string",
 						"minLength": 1,
@@ -3361,14 +6269,120 @@
 						"format": "int32",
 						"minimum": 1,
 						"maximum": 22
+					},
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
 					}
 				},
 				"required": [
-					"version",
 					"providerName",
 					"tileUrlTemplate",
 					"attribution",
-					"maxZoom"
+					"maxZoom",
+					"id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MapSettingsDto": {
+				"description": "Legacy top-level fields mirror the default layer.",
+				"properties": {
+					"providerName": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"tileUrlTemplate": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 500
+					},
+					"attribution": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 300
+					},
+					"maxZoom": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 22
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 while the default is in use."
+					},
+					"layers": {
+						"items": {
+							"$ref": "#/components/schemas/BaseMapLayerDto"
+						},
+						"type": "array"
+					},
+					"defaultLayerId": {
+						"$ref": "#/components/schemas/Uuid"
+					}
+				},
+				"required": [
+					"providerName",
+					"tileUrlTemplate",
+					"attribution",
+					"maxZoom",
+					"version",
+					"layers",
+					"defaultLayerId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateMapSettingsRequest": {
+				"properties": {
+					"providerName": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"tileUrlTemplate": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 500
+					},
+					"attribution": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 300
+					},
+					"maxZoom": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 22
+					},
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0
+					},
+					"layers": {
+						"items": {
+							"$ref": "#/components/schemas/BaseMapLayerDto"
+						},
+						"type": "array",
+						"description": "Omit to update only the existing default layer, preserving other layers.",
+						"minItems": 1,
+						"maxItems": 10
+					},
+					"defaultLayerId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Must refer to a supplied layer; otherwise the first supplied layer is the default."
+					}
+				},
+				"required": [
+					"providerName",
+					"tileUrlTemplate",
+					"attribution",
+					"maxZoom",
+					"version"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -3409,6 +6423,145 @@
 				"required": [
 					"version",
 					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"IconSettingsDto": {
+				"properties": {
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until the first upload."
+					},
+					"icons": {
+						"type": "number",
+						"format": "double"
+					},
+					"sets": {
+						"type": "number",
+						"format": "double"
+					},
+					"groups": {
+						"type": "number",
+						"format": "double"
+					},
+					"updatedAt": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"version",
+					"icons",
+					"sets",
+					"groups",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportReportEntry": {
+				"properties": {
+					"feature": {
+						"type": "string",
+						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"feature",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateIconSettingsResult": {
+				"properties": {
+					"settings": {
+						"$ref": "#/components/schemas/IconSettingsDto"
+					},
+					"accepted": {
+						"type": "number",
+						"format": "double"
+					},
+					"rejected": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"settings",
+					"accepted",
+					"rejected"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageIconDto": {
+				"description": "Operator-provided PNG icon, identified by its original TAK path.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"path": {
+						"type": "string"
+					},
+					"setName": {
+						"type": "string"
+					},
+					"group": {
+						"type": "string"
+					},
+					"filename": {
+						"type": "string"
+					},
+					"cotType": {
+						"type": "string",
+						"nullable": true
+					},
+					"width": {
+						"type": "number",
+						"format": "double"
+					},
+					"height": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"path",
+					"setName",
+					"group",
+					"filename",
+					"cotType",
+					"width",
+					"height"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"InstanceIconCatalogue": {
+				"properties": {
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"icons": {
+						"items": {
+							"$ref": "#/components/schemas/PackageIconDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"version",
+					"icons"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -3828,6 +6981,10 @@
 						"nullable": true,
 						"description": "ATAK role for members of this role, replacing their event group's default TAK role, e.g.\n`Team Lead` for platoon leaders. `null` keeps the group's role."
 					},
+					"seesAllTakGroups": {
+						"type": "boolean",
+						"description": "Members of this role see and reach every event group when the event separates TAK groups,\ne.g. platoon leaders."
+					},
 					"version": {
 						"type": "number",
 						"format": "double",
@@ -3849,6 +7006,7 @@
 					"slug",
 					"description",
 					"takRoleOverride",
+					"seesAllTakGroups",
 					"version",
 					"createdAt",
 					"updatedAt"
@@ -3897,6 +7055,9 @@
 							}
 						],
 						"nullable": true
+					},
+					"seesAllTakGroups": {
+						"type": "boolean"
 					}
 				},
 				"required": [
@@ -3935,6 +7096,10 @@
 						],
 						"nullable": true,
 						"description": "Omit to keep the current override; `null` removes it."
+					},
+					"seesAllTakGroups": {
+						"type": "boolean",
+						"description": "Omit to keep the current value."
 					}
 				},
 				"required": [
@@ -4803,25 +7968,113 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"AtakPreferenceTarget": {
+				"anyOf": [
+					{
+						"properties": {
+							"type": {
+								"type": "string",
+								"enum": [
+									"event"
+								],
+								"nullable": false
+							}
+						},
+						"required": [
+							"type"
+						],
+						"type": "object"
+					},
+					{
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"type": {
+								"type": "string",
+								"enum": [
+									"group",
+									"role",
+									"member"
+								]
+							}
+						},
+						"required": [
+							"id",
+							"type"
+						],
+						"type": "object"
+					}
+				],
+				"description": "Who an entry is for: the whole event, or one event group, role or member."
+			},
+			"AtakPreferenceType": {
+				"type": "string",
+				"enum": [
+					"string",
+					"boolean",
+					"integer",
+					"long",
+					"float"
+				]
+			},
+			"TargetedAtakPreference": {
+				"description": "An event's preference with its target, as stored and published.",
+				"properties": {
+					"preference": {
+						"type": "string",
+						"description": "The `<preference name>` group, such as `com.atakmap.app_preferences`."
+					},
+					"key": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceType"
+					},
+					"value": {
+						"type": "string"
+					},
+					"target": {
+						"$ref": "#/components/schemas/AtakPreferenceTarget"
+					}
+				},
+				"required": [
+					"preference",
+					"key",
+					"type",
+					"value",
+					"target"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"CurrentTakConfiguration": {
 				"properties": {
 					"meshChannelId": {
 						"type": "string",
 						"nullable": true
+					},
+					"atakPreferences": {
+						"items": {
+							"$ref": "#/components/schemas/TargetedAtakPreference"
+						},
+						"type": "array",
+						"description": "The event's ATAK preferences with their targets; each member's app gets its resolved share."
 					}
 				},
 				"required": [
-					"meshChannelId"
+					"meshChannelId",
+					"atakPreferences"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
 			"SnapshotTak": {
 				"$ref": "#/components/schemas/CurrentTakConfiguration",
-				"description": "The Meshtastic app's TAK mesh channel; `null` in revisions created before version 4. Revisions\nbefore version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced."
+				"description": "The Meshtastic app's TAK mesh channel and the ATAK preferences; `null` in revisions created\nbefore version 4, and without ATAK preferences before version 7. Version 7 stored preferences\nwithout targets, which all reached the whole event. Revisions before version 6 also stored a\nconnection mode, which the switch `meshtasticEnabled` replaced."
 			},
 			"ConfigurationSnapshot": {
-				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added\n`meshtasticEnabled`.",
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added\n`meshtasticEnabled`; version 7 added `tak.atakPreferences`; version 8 gave each preference a target.",
 				"properties": {
 					"schemaVersion": {
 						"type": "number",
@@ -4831,7 +8084,9 @@
 							3,
 							4,
 							5,
-							6
+							6,
+							7,
+							8
 						]
 					},
 					"meshtasticEnabled": {
@@ -4934,6 +8189,77 @@
 				"required": [
 					"created",
 					"revision"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ConfigurationChangeArea": {
+				"type": "string",
+				"enum": [
+					"event",
+					"roles",
+					"groups",
+					"channels",
+					"meshtastic",
+					"tak"
+				]
+			},
+			"ConfigurationChangeKind": {
+				"type": "string",
+				"enum": [
+					"added",
+					"removed",
+					"changed"
+				]
+			},
+			"ConfigurationChangeDto": {
+				"properties": {
+					"area": {
+						"$ref": "#/components/schemas/ConfigurationChangeArea"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/ConfigurationChangeKind"
+					},
+					"name": {
+						"type": "string",
+						"description": "Name of the role, group or channel, a Meshtastic setting key, or a short description."
+					},
+					"fields": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Dotted paths of the changed fields of a changed item; empty otherwise."
+					}
+				},
+				"required": [
+					"area",
+					"kind",
+					"name",
+					"fields"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PendingConfigurationChangesDto": {
+				"properties": {
+					"publishedRevision": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Number of the revision participants receive; `null` before the first one."
+					},
+					"changes": {
+						"items": {
+							"$ref": "#/components/schemas/ConfigurationChangeDto"
+						},
+						"type": "array",
+						"description": "What publishing would change. Empty when nothing is pending, and always empty for drafts\n(activation publishes) and archived events (read-only)."
+					}
+				},
+				"required": [
+					"publishedRevision",
+					"changes"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5097,7 +8423,9 @@
 					"device-profile",
 					"member-data-package",
 					"tak-connection-package",
-					"itak-connection-package"
+					"itak-connection-package",
+					"wintak-connection-package",
+					"atak-unlock-package"
 				]
 			},
 			"CreateDownloadGrantRequest": {
@@ -5107,7 +8435,7 @@
 					},
 					"eventId": {
 						"$ref": "#/components/schemas/Uuid",
-						"description": "Required for `device-profile` and `member-data-package`."
+						"description": "Required for `device-profile`, `member-data-package` and `atak-unlock-package`."
 					},
 					"memberId": {
 						"$ref": "#/components/schemas/Uuid",
@@ -5171,275 +8499,6 @@
 				"required": [
 					"items",
 					"page"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageSnapshotLayer": {
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"name": {
-						"type": "string"
-					},
-					"sortOrder": {
-						"type": "number",
-						"format": "double"
-					},
-					"visible": {
-						"type": "boolean"
-					}
-				},
-				"required": [
-					"id",
-					"name",
-					"sortOrder",
-					"visible"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageObjectKind": {
-				"type": "string",
-				"enum": [
-					"point",
-					"line",
-					"polygon",
-					"circle"
-				]
-			},
-			"Position": {
-				"items": {
-					"type": "number",
-					"format": "double"
-				},
-				"type": "array",
-				"description": "GeoJSON position: `[longitude, latitude]` or `[longitude, latitude, altitudeMetresHae]`.",
-				"minItems": 2,
-				"maxItems": 3
-			},
-			"PointGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Point"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"$ref": "#/components/schemas/Position"
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"LineStringGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"LineString"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"items": {
-							"$ref": "#/components/schemas/Position"
-						},
-						"type": "array"
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PolygonGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Polygon"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"items": {
-							"items": {
-								"$ref": "#/components/schemas/Position"
-							},
-							"type": "array"
-						},
-						"type": "array",
-						"description": "Outer ring first, then holes; every ring repeats its first position at the end."
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CircleGeometry": {
-				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\na silently approximated polygon and maps to ATAK `u-d-c-c` circles.",
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Circle"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"$ref": "#/components/schemas/Position",
-						"description": "Centre position."
-					},
-					"radius": {
-						"type": "number",
-						"format": "double",
-						"description": "Radius in metres.",
-						"minimum": 0.1,
-						"maximum": 100000
-					}
-				},
-				"required": [
-					"type",
-					"coordinates",
-					"radius"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageGeometry": {
-				"anyOf": [
-					{
-						"$ref": "#/components/schemas/PointGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/LineStringGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/PolygonGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/CircleGeometry"
-					}
-				],
-				"description": "RFC 7946 geometry in WGS84, plus circles as an explicit domain extension."
-			},
-			"HexColor": {
-				"type": "string",
-				"description": "Colour as `#RRGGBB`.",
-				"pattern": "^#[0-9A-Fa-f]{6}$"
-			},
-			"PackageObjectStyle": {
-				"properties": {
-					"color": {
-						"$ref": "#/components/schemas/HexColor",
-						"description": "Marker, line and polygon outline colour."
-					},
-					"strokeWidth": {
-						"type": "integer",
-						"format": "int32",
-						"description": "Line and outline width in pixels.",
-						"minimum": 1,
-						"maximum": 20
-					},
-					"fillOpacity": {
-						"type": "number",
-						"format": "double",
-						"description": "Polygon fill opacity; the fill uses `color`.",
-						"minimum": 0,
-						"maximum": 1
-					}
-				},
-				"required": [
-					"color",
-					"strokeWidth",
-					"fillOpacity"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CotType": {
-				"type": "string",
-				"description": "CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly\ninfantry).",
-				"pattern": "^[a-z](-[A-Za-z0-9]+){1,15}$",
-				"maxLength": 64
-			},
-			"TakMarker": {
-				"description": "Optional TAK presentation of a marker, kept so ATAK packages round-trip without loss.",
-				"properties": {
-					"cotType": {
-						"$ref": "#/components/schemas/CotType",
-						"description": "Defaults to the spot marker `b-m-p-s-m`; `a-*` types are drawn as military symbols."
-					},
-					"iconsetPath": {
-						"type": "string",
-						"nullable": true,
-						"description": "ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom\nicon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.",
-						"pattern": "^[^\\u0000-\\u001f<>\"]+$",
-						"maxLength": 256
-					}
-				},
-				"required": [
-					"cotType",
-					"iconsetPath"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageSnapshotObject": {
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"layerId": {
-						"type": "string"
-					},
-					"kind": {
-						"$ref": "#/components/schemas/PackageObjectKind"
-					},
-					"name": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string",
-						"nullable": true
-					},
-					"geometry": {
-						"$ref": "#/components/schemas/PackageGeometry"
-					},
-					"style": {
-						"$ref": "#/components/schemas/PackageObjectStyle"
-					},
-					"tak": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/TakMarker"
-							}
-						],
-						"nullable": true
-					}
-				},
-				"required": [
-					"id",
-					"layerId",
-					"kind",
-					"name",
-					"description",
-					"geometry",
-					"style",
-					"tak"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5589,6 +8648,53 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"PresentationLoss": {
+				"properties": {
+					"objectId": {
+						"type": "string"
+					},
+					"objectName": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"objectId",
+					"objectName",
+					"code",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresentationReport": {
+				"properties": {
+					"format": {
+						"type": "string",
+						"enum": [
+							"cot",
+							"kml"
+						]
+					},
+					"losses": {
+						"items": {
+							"$ref": "#/components/schemas/PresentationLoss"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"format",
+					"losses"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"DataPackageContentSummary": {
 				"properties": {
 					"points": {
@@ -5604,6 +8710,18 @@
 						"format": "double"
 					},
 					"circles": {
+						"type": "number",
+						"format": "double"
+					},
+					"rectangles": {
+						"type": "number",
+						"format": "double"
+					},
+					"ellipses": {
+						"type": "number",
+						"format": "double"
+					},
+					"routes": {
 						"type": "number",
 						"format": "double"
 					},
@@ -5733,6 +8851,9 @@
 					"eventId": {
 						"$ref": "#/components/schemas/Uuid"
 					},
+					"kind": {
+						"$ref": "#/components/schemas/DataPackageKind"
+					},
 					"name": {
 						"type": "string"
 					},
@@ -5770,6 +8891,10 @@
 					"audience": {
 						"$ref": "#/components/schemas/PackageAudience"
 					},
+					"writers": {
+						"$ref": "#/components/schemas/EventAudience",
+						"description": "Missions only: who may change the mission from a TAK app; empty for packages."
+					},
 					"takDelivery": {
 						"$ref": "#/components/schemas/PackageTakDelivery"
 					},
@@ -5795,6 +8920,7 @@
 				"required": [
 					"id",
 					"eventId",
+					"kind",
 					"name",
 					"description",
 					"latestRevision",
@@ -5803,6 +8929,7 @@
 					"draftContents",
 					"sources",
 					"audience",
+					"writers",
 					"takDelivery",
 					"sortOrder",
 					"version",
@@ -5819,8 +8946,12 @@
 							"type": "string"
 						},
 						"type": "array",
-						"description": "Every data package of the event, bottom first; the last one is drawn on top.",
+						"description": "Every data package of the event of `kind`, bottom first; the last one is drawn on top.",
 						"maxItems": 500
+					},
+					"kind": {
+						"$ref": "#/components/schemas/DataPackageKind",
+						"description": "Packages and missions are ordered separately; `package` when omitted."
 					}
 				},
 				"required": [
@@ -5895,21 +9026,102 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"PackageObjectPage": {
+			"BatchPackageObjectsResponse": {
 				"properties": {
-					"items": {
+					"updated": {
 						"items": {
 							"$ref": "#/components/schemas/PackageObjectDto"
 						},
 						"type": "array"
 					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
+					"created": {
+						"items": {
+							"$ref": "#/components/schemas/PackageObjectDto"
+						},
+						"type": "array"
+					},
+					"deletedIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array"
 					}
 				},
 				"required": [
-					"items",
-					"page"
+					"updated",
+					"created",
+					"deletedIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BatchPackageObjectUpdate": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Moving an object to another layer of the same data package is allowed."
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 2000
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/PackageGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/PackageObjectStyle"
+					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakMarker"
+							}
+						],
+						"nullable": true,
+						"description": "Markers only; send `null` for a plain spot marker."
+					},
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					}
+				},
+				"required": [
+					"version",
+					"layerId",
+					"name",
+					"description",
+					"geometry",
+					"style",
+					"tak",
+					"id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BatchPackageObjectDelete": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1
+					}
+				},
+				"required": [
+					"id",
+					"version"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5950,6 +9162,59 @@
 					"layerId",
 					"name",
 					"geometry"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BatchPackageObjectsRequest": {
+				"description": "Atomic changes in one draft. Any conflict or locked layer rejects the entire batch.",
+				"properties": {
+					"updates": {
+						"items": {
+							"$ref": "#/components/schemas/BatchPackageObjectUpdate"
+						},
+						"type": "array",
+						"maxItems": 500
+					},
+					"deletes": {
+						"items": {
+							"$ref": "#/components/schemas/BatchPackageObjectDelete"
+						},
+						"type": "array",
+						"maxItems": 500
+					},
+					"creates": {
+						"items": {
+							"$ref": "#/components/schemas/CreatePackageObjectRequest"
+						},
+						"type": "array",
+						"description": "Restores deleted objects with new server IDs, in request order.",
+						"maxItems": 500
+					}
+				},
+				"required": [
+					"updates",
+					"deletes",
+					"creates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageObjectPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/PackageObjectDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5999,23 +9264,6 @@
 					"geometry",
 					"style",
 					"tak"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ImportReportEntry": {
-				"properties": {
-					"feature": {
-						"type": "string",
-						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
-					},
-					"message": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"feature",
-					"message"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -6276,12 +9524,24 @@
 						"nullable": true,
 						"maxLength": 1000
 					},
+					"kind": {
+						"$ref": "#/components/schemas/DataPackageKind",
+						"description": "The kind of the new package, e.g. `mission` to start a mission from published packages; `package` when omitted."
+					},
+					"source": {
+						"type": "string",
+						"enum": [
+							"published",
+							"draft"
+						],
+						"description": "Copy current drafts explicitly; defaults to immutable published revisions. Draft selections cannot specify revision numbers."
+					},
 					"packages": {
 						"items": {
 							"$ref": "#/components/schemas/CombinedExportSelection"
 						},
 						"type": "array",
-						"description": "Published package revisions and optional layer selections to copy.",
+						"description": "Source packages and optional layer selections to copy.",
 						"minItems": 1,
 						"maxItems": 100
 					}
@@ -6354,7 +9614,7 @@
 				"additionalProperties": false
 			},
 			"PackageContentDto": {
-				"description": "Map content kept from an imported ATAK Data Package; exported unchanged with its layer.",
+				"description": "Imported map content (exported unchanged), or an operator-provided editor-only icon library.",
 				"properties": {
 					"id": {
 						"$ref": "#/components/schemas/Uuid"
@@ -6367,7 +9627,8 @@
 						"enum": [
 							"offline-map",
 							"nested-data-package",
-							"rubber-sheet"
+							"rubber-sheet",
+							"icon-library"
 						]
 					},
 					"name": {
@@ -6462,6 +9723,30 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"IconLibraryImportResult": {
+				"properties": {
+					"contentId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"accepted": {
+						"type": "number",
+						"format": "double"
+					},
+					"rejected": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"contentId",
+					"accepted",
+					"rejected"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"DataPackagePage": {
 				"properties": {
 					"items": {
@@ -6492,6 +9777,10 @@
 						"type": "string",
 						"nullable": true,
 						"maxLength": 1000
+					},
+					"kind": {
+						"$ref": "#/components/schemas/DataPackageKind",
+						"description": "Fixed at creation; `package` when omitted."
 					}
 				},
 				"required": [
@@ -6542,6 +9831,25 @@
 				"required": [
 					"version",
 					"audience"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdatePackageWritersRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"writers": {
+						"$ref": "#/components/schemas/EventAudience"
+					}
+				},
+				"required": [
+					"version",
+					"writers"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -6655,12 +9963,19 @@
 							"$ref": "#/components/schemas/CombinedExportNameClash"
 						},
 						"type": "array"
+					},
+					"presentationLosses": {
+						"items": {
+							"$ref": "#/components/schemas/PresentationLoss"
+						},
+						"type": "array"
 					}
 				},
 				"required": [
 					"included",
 					"skipped",
-					"nameClashes"
+					"nameClashes",
+					"presentationLosses"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -8645,6 +11960,334 @@
 				]
 			}
 		},
+		"/events/{eventId}/tak-traffic/history": {
+			"get": {
+				"operationId": "GetTakTrafficHistory",
+				"responses": {
+					"200": {
+						"description": "Recorded tracks",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakTrafficHistoryDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Recorded positions between `from` and `to` (at most 31 days), grouped into tracks per CoT UID\nand split wherever positions are more than `gapSeconds` apart, jump implausibly or are only\napproximate. `groupId` keeps positions sent by members of one event group; `uid` keeps one\ntrack. At most 20,000 positions, oldest first; `truncated` says the newest are missing.\nRequires `tak-traffic.view`; every request is audited.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "RFC 3339 instant with offset.",
+						"in": "query",
+						"name": "from",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "RFC 3339 instant with offset.",
+						"in": "query",
+						"name": "to",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "groupId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "CoT UID of one track.",
+						"in": "query",
+						"name": "uid",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"maxLength": 200
+						}
+					},
+					{
+						"description": "Seconds without a position after which a track is broken. Default 300.",
+						"in": "query",
+						"name": "gapSeconds",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 30,
+							"maximum": 3600
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/tak-traffic/history/export": {
+			"get": {
+				"operationId": "ExportTakTracks",
+				"responses": {
+					"200": {
+						"description": "Tracks as GeoJSON or GPX",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The same tracks as GeoJSON (one feature per continuous segment) or GPX (one track per UID,\none segment per continuous part, approximate positions as waypoints), at most 50,000\npositions. Requires `tak-traffic.view`; every export is audited.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "format",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/TakTrafficExportFormat"
+						}
+					},
+					{
+						"in": "query",
+						"name": "from",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "to",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "groupId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "uid",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"maxLength": 200
+						}
+					},
+					{
+						"in": "query",
+						"name": "gapSeconds",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 30,
+							"maximum": 3600
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/tak-traffic/recording/items": {
+			"delete": {
+				"operationId": "DeleteRecordedTakTraffic",
+				"responses": {
+					"200": {
+						"description": "Recorded traffic deleted",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DeletedTakTrafficDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Deletes the event's recorded traffic now instead of after the retention, or only the items of\none CoT UID. Requires `events.manage`; audited.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "uid",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"maxLength": 200
+						}
+					}
+				]
+			}
+		},
 		"/tak-server/settings": {
 			"get": {
 				"operationId": "GetTakServerSettings",
@@ -9173,6 +12816,64 @@
 					}
 				},
 				"description": "An iTAK connection package with the configured server ports, trust material and a newly\nissued user-bound client identity. The private client key exists only in this download.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/me/wintak-connection-package": {
+			"get": {
+				"operationId": "GetWintakConnectionPackage",
+				"responses": {
+					"200": {
+						"description": "WinTAK Connection Data Package",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "No TAK access",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "TAK server not enabled, or an earlier WinTAK package certificate is still valid",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "A WinTAK connection package in the iTAK layout, with a newly issued user-bound client identity.\nWinTAK cannot enroll with a username and password, so it imports this ready-made certificate.\nThe private client key exists only in this download.",
 				"tags": [
 					"TAK server"
 				],
@@ -9823,6 +13524,448 @@
 				"parameters": []
 			}
 		},
+		"/events/{eventId}/tak/groups": {
+			"get": {
+				"operationId": "ListTakGroups",
+				"responses": {
+					"200": {
+						"description": "TAK groups",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakGroupPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the event's TAK groups ordered by creation time, oldest first.",
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateTakGroup",
+				"responses": {
+					"201": {
+						"description": "TAK group created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Name already in use or event archived; Idempotency-Key conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateTakGroupRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/groups/{groupId}": {
+			"get": {
+				"operationId": "GetTakGroup",
+				"responses": {
+					"200": {
+						"description": "TAK group",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns the group with its members.",
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "groupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateTakGroup",
+				"responses": {
+					"200": {
+						"description": "TAK group updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, name already in use or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces name and description, and the members when given. Requires the current `version`.",
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "groupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTakGroupRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteTakGroup",
+				"responses": {
+					"204": {
+						"description": "TAK group deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "groupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
 		"/events/{eventId}/tak/configuration": {
 			"get": {
 				"operationId": "GetTakConfiguration",
@@ -9978,6 +14121,379 @@
 				}
 			}
 		},
+		"/events/{eventId}/tak/atak-preferences": {
+			"get": {
+				"operationId": "GetAtakPreferences",
+				"responses": {
+					"200": {
+						"description": "ATAK preferences",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AtakPreferenceListDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "ReplaceAtakPreferences",
+				"responses": {
+					"200": {
+						"description": "ATAK preferences replaced",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AtakPreferenceListDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the whole list. Requires the current `version` (0 before the first save).",
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ReplaceAtakPreferencesRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/atak-preferences/import": {
+			"post": {
+				"operationId": "ImportAtakPreferences",
+				"responses": {
+					"200": {
+						"description": "ATAK preferences imported",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ImportAtakPreferencesResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Imports a `.pref` file, such as ATAK's settings export, as event-wide entries. Keys\nOpenMeshTak owns and entries that do not fit ATAK's types are left out and listed.",
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ImportAtakPreferencesRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/atak-preferences/unlock-package": {
+			"get": {
+				"operationId": "DownloadAtakUnlockPackage",
+				"responses": {
+					"200": {
+						"description": "ATAK unlock Data Package",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "The event never restricted a settings item",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "An ATAK Data Package that sets `disablePreferenceItem_<item>` and `hidePreferenceItem_<item>`\nto `false` for every settings item the event restricts now or restricted in a published\nrevision, so devices show those items normally again after the event.",
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/tak/atak-preference-catalog": {
+			"get": {
+				"operationId": "GetAtakPreferenceCatalog",
+				"responses": {
+					"200": {
+						"description": "ATAK preference catalog",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AtakPreferenceCatalogDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": []
+			}
+		},
 		"/setup": {
 			"get": {
 				"operationId": "GetSetupStatus",
@@ -10026,6 +14542,902 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/SetupRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/presets": {
+			"get": {
+				"operationId": "ListSettingsPresets",
+				"responses": {
+					"200": {
+						"description": "Presets",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SettingsPresetPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists library presets ordered by creation time, oldest first.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "kind",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/PresetKind"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateSettingsPreset",
+				"responses": {
+					"201": {
+						"description": "Preset saved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SettingsPresetDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Validates a preset document without an event and saves a copy to the library.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateSettingsPresetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/presets/{presetId}": {
+			"get": {
+				"operationId": "GetSettingsPreset",
+				"responses": {
+					"200": {
+						"description": "Preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SettingsPresetDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The preset with its portable document, ready to download or import into an event.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "presetId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateSettingsPreset",
+				"responses": {
+					"200": {
+						"description": "Preset updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SettingsPresetDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Renames the preset or replaces its settings. Requires the current `version`.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "presetId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateSettingsPresetRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteSettingsPreset",
+				"responses": {
+					"204": {
+						"description": "Preset deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Deletes the preset. Events that used it keep their values.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "presetId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic/preset": {
+			"get": {
+				"operationId": "ExportMeshtasticPreset",
+				"responses": {
+					"200": {
+						"description": "Meshtastic preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PresetDocumentDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The event's Meshtastic settings without secrets, managed or member-specific values.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic/preset/preview": {
+			"post": {
+				"operationId": "PreviewMeshtasticPreset",
+				"responses": {
+					"200": {
+						"description": "Import preview",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticPresetPreviewDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Checks a preset against the event's firmware profile and reports what an import would change.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PreviewMeshtasticPresetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/meshtastic/preset/import": {
+			"post": {
+				"operationId": "ImportMeshtasticPreset",
+				"responses": {
+					"200": {
+						"description": "Preset imported into the draft",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticConfigurationDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, unconfirmed import or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Applies a previewed preset to the draft. Send the preview's `version` and `confirmation`.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ApplyMeshtasticPresetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/preset": {
+			"get": {
+				"operationId": "ExportTakPreset",
+				"responses": {
+					"200": {
+						"description": "TAK preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PresetDocumentDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The event's ATAK preferences for the whole event, its groups and roles.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/tak/preset/preview": {
+			"post": {
+				"operationId": "PreviewTakPreset",
+				"responses": {
+					"200": {
+						"description": "Import preview",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakPresetPreviewDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset or mapping",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Checks a preset against the ATAK catalog and the event, and reports what an import would add or\nchange. `confirmation` stays `null` until every group and role of the preset is mapped.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PreviewTakPresetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/preset/import": {
+			"post": {
+				"operationId": "ImportTakPreset",
+				"responses": {
+					"200": {
+						"description": "Preset imported into the draft",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AtakPreferenceListDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, unconfirmed import or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset or mapping",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Merges a previewed preset into the draft. Send the preview's `version`, mappings and `confirmation`.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ApplyTakPresetRequest"
 							}
 						}
 					}
@@ -10739,6 +16151,345 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/events/{eventId}/offline-snapshots": {
+			"post": {
+				"operationId": "CreateOfflineSnapshot",
+				"responses": {
+					"200": {
+						"description": "Offline snapshot document",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OfflineSnapshotDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Describes the published revisions of the selected packages: layers, objects and displayable\nmap content with sizes and checksums. Stores nothing on the server; audited.",
+				"tags": [
+					"Offline"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateOfflineSnapshotRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/offline-snapshots/packages/{packageId}/revisions/{number}/contents/{contentId}/tiles": {
+			"get": {
+				"operationId": "ListOfflineTiles",
+				"responses": {
+					"200": {
+						"description": "Tile page",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OfflineTilePage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "One page of the tiles of a published offline map, base64-encoded with their SHA-256.",
+				"tags": [
+					"Offline"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "number",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/offline-snapshots/packages/{packageId}/revisions/{number}/contents/{contentId}/image": {
+			"get": {
+				"operationId": "GetOfflineImage",
+				"responses": {
+					"200": {
+						"description": "Rubber-sheet image",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The image of a published rubber sheet.",
+				"tags": [
+					"Offline"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "number",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/meshtastic/firmware-releases": {
@@ -12766,7 +18517,7 @@
 						}
 					}
 				},
-				"description": "The base map the Web app shows. Readable by every signed-in user.",
+				"description": "Available Web base maps and the installation default. Readable by every signed-in user.",
 				"tags": [
 					"Map"
 				],
@@ -12831,7 +18582,7 @@
 						}
 					}
 				},
-				"description": "Changes the base map for everyone. Requires instance-wide `settings.manage`.",
+				"description": "Changes available base maps and their default. Requires instance-wide `settings.manage`.",
 				"tags": [
 					"Map"
 				],
@@ -12949,6 +18700,309 @@
 						}
 					}
 				}
+			}
+		},
+		"/map/icons/settings": {
+			"get": {
+				"operationId": "GetIconSettings",
+				"responses": {
+					"200": {
+						"description": "Icon settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IconSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The installation-wide library summary. Readable by signed-in users.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateIconSettings",
+				"responses": {
+					"200": {
+						"description": "Icon database imported",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UpdateIconSettingsResult"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Upload too large",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "Unsupported upload",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid icon database",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces installation-wide PNG icons using raw WinTAK SQLite bytes (10 MiB). Requires settings.manage.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "version",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 0
+						}
+					}
+				]
+			},
+			"delete": {
+				"operationId": "ClearSettings",
+				"responses": {
+					"200": {
+						"description": "Icon database removed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IconSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Clears shared icons without changing stored marker paths. Requires settings.manage.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "version",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 0
+						}
+					}
+				]
+			}
+		},
+		"/map/icons": {
+			"get": {
+				"operationId": "GetCatalogue",
+				"responses": {
+					"200": {
+						"description": "Icon catalogue",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InstanceIconCatalogue"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Original TAK icon paths and fallback types, shared by all signed-in editors.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/map/icons/{version}/{iconId}/image": {
+			"get": {
+				"operationId": "GetImage",
+				"responses": {
+					"200": {
+						"description": "Icon image",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "One PNG from the current library; stale versions and unknown IDs return 404.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "version",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"in": "path",
+						"name": "iconId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/health": {
@@ -15679,6 +21733,65 @@
 				]
 			}
 		},
+		"/events/{eventId}/configuration-revisions/pending-changes": {
+			"get": {
+				"operationId": "GetPendingConfigurationChanges",
+				"responses": {
+					"200": {
+						"description": "Pending configuration changes",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PendingConfigurationChangesDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists what publishing would change compared with the published revision. Requires `events.read`.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
 		"/events/{eventId}/configuration-revisions/{revisionId}": {
 			"get": {
 				"operationId": "GetConfigurationRevision",
@@ -16323,6 +22436,113 @@
 				]
 			}
 		},
+		"/events/{eventId}/data-packages/{packageId}/presentation-report": {
+			"get": {
+				"operationId": "Report",
+				"responses": {
+					"200": {
+						"description": "Presentation differences",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PresentationReport"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Reports source-confirmed presentation differences before downloading an export.\nOmit revision for the current draft. This is not a real-client acceptance result.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "format",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"cot",
+								"kml"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "revision",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"in": "query",
+						"name": "layerId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
 		"/events/{eventId}/data-package-order": {
 			"put": {
 				"operationId": "ReorderDataPackages",
@@ -16419,6 +22639,121 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/ReorderDataPackagesRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/objects/batch": {
+			"post": {
+				"operationId": "BatchPackageObjects",
+				"responses": {
+					"200": {
+						"description": "Batch saved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BatchPackageObjectsResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, locked layer or archived event",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid batch or geometry",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Atomically edits/deletes/restores up to 500 objects; failures leave the draft unchanged.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BatchPackageObjectsRequest"
 							}
 						}
 					}
@@ -17518,7 +23853,7 @@
 						}
 					}
 				},
-				"description": "Exports the current draft as KML; `layerId` limits it to one layer. Circles become polygons.",
+				"description": "Exports the current draft as KML; `layerId` limits it to one layer. Circles and ellipses become labelled 64-sided footprints; parametric metadata is retained in ExtendedData.",
 				"tags": [
 					"Data packages"
 				],
@@ -18003,7 +24338,7 @@
 						}
 					}
 				},
-				"description": "Copies selected published layers with new UUIDs and records their source revisions.",
+				"description": "Copies selected layers with new UUIDs. Published provenance is retained; explicit draft copies are audited by snapshot hash.",
 				"tags": [
 					"Data packages"
 				],
@@ -18615,7 +24950,7 @@
 						}
 					}
 				},
-				"description": "Imports an ATAK Data Package (`application/zip`, at most 10 MB) or a single CoT event\n(`application/xml`) into the layer. Markers, freeform shapes, rectangles and circles are\nsupported; the report lists every adjusted, skipped and rejected item.",
+				"description": "Imports an ATAK Data Package (`application/zip`, at most 10 MB) or a single CoT event\n(`application/xml`) into the layer. Markers, freeform shapes, rectangles, circles, ellipses and routes are\nsupported; the report lists every adjusted, skipped and rejected item.",
 				"tags": [
 					"Data packages"
 				],
@@ -18751,6 +25086,313 @@
 				]
 			}
 		},
+		"/events/{eventId}/data-packages/{packageId}/layers/{layerId}/import/icons": {
+			"post": {
+				"operationId": "ImportPackageIcons",
+				"responses": {
+					"200": {
+						"description": "Icon library imported",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IconLibraryImportResult"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Layer locked, event archived or too many libraries",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Upload too large",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "Unsupported upload",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid icon database",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Imports PNG icons from WinTAK iconsets.sqlite (raw bytes, 10 MB maximum). Requires data-packages.edit; icons are editor-only and do not ship in TAK exports.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "layerId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/contents/{contentId}/icons": {
+			"get": {
+				"operationId": "ListIcons",
+				"responses": {
+					"200": {
+						"description": "Icons",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/PackageIconDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The library's original TAK paths and safe image identifiers. Requires data-packages.read.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/contents/{contentId}/icons/{iconId}/image": {
+			"get": {
+				"operationId": "GetIconImage",
+				"responses": {
+					"200": {
+						"description": "Icon image",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "One validated PNG, served only to an authorized package reader.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "iconId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
 		"/events/{eventId}/data-packages": {
 			"get": {
 				"operationId": "ListDataPackages",
@@ -18806,7 +25448,7 @@
 						}
 					}
 				},
-				"description": "Lists the event's data packages ordered by creation time, oldest first.",
+				"description": "Lists the event's data packages and missions ordered by creation time, oldest first; `kind`\nlimits the list to one kind.",
 				"tags": [
 					"Data packages"
 				],
@@ -18844,6 +25486,14 @@
 						"required": false,
 						"schema": {
 							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "kind",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/DataPackageKind"
 						}
 					}
 				]
@@ -19315,6 +25965,113 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/UpdatePackageAudienceRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/writers": {
+			"put": {
+				"operationId": "UpdateMissionWriters",
+				"responses": {
+					"200": {
+						"description": "Writers updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DataPackageDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, not a mission or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Missions only: sets the groups, roles and members that may change the mission from a TAK app.\nRequires `data-packages.publish` and the current `version`.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdatePackageWritersRequest"
 							}
 						}
 					}

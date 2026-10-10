@@ -290,6 +290,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/{eventId}/tak-traffic/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Recorded positions between `from` and `to` (at most 31 days), grouped into tracks per CoT UID
+         *     and split wherever positions are more than `gapSeconds` apart, jump implausibly or are only
+         *     approximate. `groupId` keeps positions sent by members of one event group; `uid` keeps one
+         *     track. At most 20,000 positions, oldest first; `truncated` says the newest are missing.
+         *     Requires `tak-traffic.view`; every request is audited.
+         */
+        get: operations["GetTakTrafficHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak-traffic/history/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The same tracks as GeoJSON (one feature per continuous segment) or GPX (one track per UID,
+         *     one segment per continuous part, approximate positions as waypoints), at most 50,000
+         *     positions. Requires `tak-traffic.view`; every export is audited.
+         */
+        get: operations["ExportTakTracks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak-traffic/recording/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * @description Deletes the event's recorded traffic now instead of after the retention, or only the items of
+         *     one CoT UID. Requires `events.manage`; audited.
+         */
+        delete: operations["DeleteRecordedTakTraffic"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tak-server/settings": {
         parameters: {
             query?: never;
@@ -428,6 +492,27 @@ export interface paths {
          *     issued user-bound client identity. The private client key exists only in this download.
          */
         get: operations["GetItakConnectionPackage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/wintak-connection-package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description A WinTAK connection package in the iTAK layout, with a newly issued user-bound client identity.
+         *     WinTAK cannot enroll with a username and password, so it imports this ready-made certificate.
+         *     The private client key exists only in this download.
+         */
+        get: operations["GetWintakConnectionPackage"];
         put?: never;
         post?: never;
         delete?: never;
@@ -616,6 +701,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/{eventId}/tak/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Lists the event's TAK groups ordered by creation time, oldest first. */
+        get: operations["ListTakGroups"];
+        put?: never;
+        post: operations["CreateTakGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak/groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Returns the group with its members. */
+        get: operations["GetTakGroup"];
+        /** @description Replaces name and description, and the members when given. Requires the current `version`. */
+        put: operations["UpdateTakGroup"];
+        post?: never;
+        delete: operations["DeleteTakGroup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{eventId}/tak/configuration": {
         parameters: {
             query?: never;
@@ -626,6 +746,80 @@ export interface paths {
         get: operations["GetTakConfiguration"];
         /** @description Replaces the TAK connection settings. Requires the current `version` (0 before the first save). */
         put: operations["UpdateTakConfiguration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak/atak-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetAtakPreferences"];
+        /** @description Replaces the whole list. Requires the current `version` (0 before the first save). */
+        put: operations["ReplaceAtakPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak/atak-preferences/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Imports a `.pref` file, such as ATAK's settings export, as event-wide entries. Keys
+         *     OpenMeshTak owns and entries that do not fit ATAK's types are left out and listed.
+         */
+        post: operations["ImportAtakPreferences"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak/atak-preferences/unlock-package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description An ATAK Data Package that sets `disablePreferenceItem_<item>` and `hidePreferenceItem_<item>`
+         *     to `false` for every settings item the event restricts now or restricted in a published
+         *     revision, so devices show those items normally again after the event.
+         */
+        get: operations["DownloadAtakUnlockPackage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tak/atak-preference-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetAtakPreferenceCatalog"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -645,6 +839,148 @@ export interface paths {
         put?: never;
         /** @description Creates the first password-backed administrator using the one-time operator token. */
         post: operations["CreateAdministrator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Lists library presets ordered by creation time, oldest first. */
+        get: operations["ListSettingsPresets"];
+        put?: never;
+        /** @description Validates a preset document without an event and saves a copy to the library. */
+        post: operations["CreateSettingsPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/presets/{presetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The preset with its portable document, ready to download or import into an event. */
+        get: operations["GetSettingsPreset"];
+        /** @description Renames the preset or replaces its settings. Requires the current `version`. */
+        put: operations["UpdateSettingsPreset"];
+        post?: never;
+        /** @description Deletes the preset. Events that used it keep their values. */
+        delete: operations["DeleteSettingsPreset"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/meshtastic/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The event's Meshtastic settings without secrets, managed or member-specific values. */
+        get: operations["ExportMeshtasticPreset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/meshtastic/preset/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Checks a preset against the event's firmware profile and reports what an import would change. */
+        post: operations["PreviewMeshtasticPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/meshtastic/preset/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Applies a previewed preset to the draft. Send the preview's `version` and `confirmation`. */
+        post: operations["ImportMeshtasticPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The event's ATAK preferences for the whole event, its groups and roles. */
+        get: operations["ExportTakPreset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak/preset/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Checks a preset against the ATAK catalog and the event, and reports what an import would add or
+         *     change. `confirmation` stays `null` until every group and role of the preset is mapped.
+         */
+        post: operations["PreviewTakPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/tak/preset/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Merges a previewed preset into the draft. Send the preview's `version`, mappings and `confirmation`. */
+        post: operations["ImportTakPreset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -821,6 +1157,60 @@ export interface paths {
          *     authorization.
          */
         get: operations["GetPrincipal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/offline-snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Describes the published revisions of the selected packages: layers, objects and displayable
+         *     map content with sizes and checksums. Stores nothing on the server; audited.
+         */
+        post: operations["CreateOfflineSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/offline-snapshots/packages/{packageId}/revisions/{number}/contents/{contentId}/tiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One page of the tiles of a published offline map, base64-encoded with their SHA-256. */
+        get: operations["ListOfflineTiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/offline-snapshots/packages/{packageId}/revisions/{number}/contents/{contentId}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The image of a published rubber sheet. */
+        get: operations["GetOfflineImage"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1203,9 +1593,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description The base map the Web app shows. Readable by every signed-in user. */
+        /** @description Available Web base maps and the installation default. Readable by every signed-in user. */
         get: operations["GetMapSettings"];
-        /** @description Changes the base map for everyone. Requires instance-wide `settings.manage`. */
+        /** @description Changes available base maps and their default. Requires instance-wide `settings.manage`. */
         put: operations["UpdateMapSettings"];
         post?: never;
         delete?: never;
@@ -1225,6 +1615,59 @@ export interface paths {
         get: operations["GetInstanceSettings"];
         /** @description Renames the installation. Requires instance-wide `settings.manage`. */
         put: operations["UpdateInstanceSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/map/icons/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The installation-wide library summary. Readable by signed-in users. */
+        get: operations["GetIconSettings"];
+        /** @description Replaces installation-wide PNG icons using raw WinTAK SQLite bytes (10 MiB). Requires settings.manage. */
+        put: operations["UpdateIconSettings"];
+        post?: never;
+        /** @description Clears shared icons without changing stored marker paths. Requires settings.manage. */
+        delete: operations["ClearSettings"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/map/icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Original TAK icon paths and fallback types, shared by all signed-in editors. */
+        get: operations["GetCatalogue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/map/icons/{version}/{iconId}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One PNG from the current library; stale versions and unknown IDs return 404. */
+        get: operations["GetImage"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1605,6 +2048,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/{eventId}/configuration-revisions/pending-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Lists what publishing would change compared with the published revision. Requires `events.read`. */
+        get: operations["GetPendingConfigurationChanges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{eventId}/configuration-revisions/{revisionId}": {
         parameters: {
             query?: never;
@@ -1727,6 +2187,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/{eventId}/data-packages/{packageId}/presentation-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Reports source-confirmed presentation differences before downloading an export.
+         *     Omit revision for the current draft. This is not a real-client acceptance result.
+         */
+        get: operations["Report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{eventId}/data-package-order": {
         parameters: {
             query?: never;
@@ -1738,6 +2218,23 @@ export interface paths {
         /** @description Replaces the order with the complete list of package IDs, bottom first. */
         put: operations["ReorderDataPackages"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/data-packages/{packageId}/objects/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Atomically edits/deletes/restores up to 500 objects; failures leave the draft unchanged. */
+        post: operations["BatchPackageObjects"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1842,7 +2339,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Exports the current draft as KML; `layerId` limits it to one layer. Circles become polygons. */
+        /** @description Exports the current draft as KML; `layerId` limits it to one layer. Circles and ellipses become labelled 64-sided footprints; parametric metadata is retained in ExtendedData. */
         get: operations["ExportPackageDraftKml"];
         put?: never;
         post?: never;
@@ -1936,7 +2433,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Copies selected published layers with new UUIDs and records their source revisions. */
+        /** @description Copies selected layers with new UUIDs. Published provenance is retained; explicit draft copies are audited by snapshot hash. */
         post: operations["CreateDataPackageCopy"];
         delete?: never;
         options?: never;
@@ -2027,7 +2524,7 @@ export interface paths {
         put?: never;
         /**
          * @description Imports an ATAK Data Package (`application/zip`, at most 10 MB) or a single CoT event
-         *     (`application/xml`) into the layer. Markers, freeform shapes, rectangles and circles are
+         *     (`application/xml`) into the layer. Markers, freeform shapes, rectangles, circles, ellipses and routes are
          *     supported; the report lists every adjusted, skipped and rejected item.
          */
         post: operations["ImportAtakDataPackage"];
@@ -2057,6 +2554,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/{eventId}/data-packages/{packageId}/layers/{layerId}/import/icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Imports PNG icons from WinTAK iconsets.sqlite (raw bytes, 10 MB maximum). Requires data-packages.edit; icons are editor-only and do not ship in TAK exports. */
+        post: operations["ImportPackageIcons"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/data-packages/{packageId}/contents/{contentId}/icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The library's original TAK paths and safe image identifiers. Requires data-packages.read. */
+        get: operations["ListIcons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/data-packages/{packageId}/contents/{contentId}/icons/{iconId}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One validated PNG, served only to an authorized package reader. */
+        get: operations["GetIconImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{eventId}/data-packages": {
         parameters: {
             query?: never;
@@ -2064,7 +2612,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Lists the event's data packages ordered by creation time, oldest first. */
+        /**
+         * @description Lists the event's data packages and missions ordered by creation time, oldest first; `kind`
+         *     limits the list to one kind.
+         */
         get: operations["ListDataPackages"];
         put?: never;
         /** @description Creates a data package with one empty layer. */
@@ -2106,6 +2657,26 @@ export interface paths {
          *     and members. Requires `data-packages.publish` and the current `version`.
          */
         put: operations["UpdateDataPackageAudience"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/data-packages/{packageId}/writers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * @description Missions only: sets the groups, roles and members that may change the mission from a TAK app.
+         *     Requires `data-packages.publish` and the current `version`.
+         */
+        put: operations["UpdateMissionWriters"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2458,6 +3029,85 @@ export interface components {
             /** Format: int32 */
             retentionDays: number;
         };
+        /** @description The OpenMeshTak user whose TAK app sent a track, with their event group when still a member. */
+        TakTrackSenderDto: {
+            userId: components["schemas"]["Uuid"];
+            displayName: string;
+            eventGroupId: components["schemas"]["Uuid"] | null;
+            eventGroupName: string | null;
+        };
+        /** @description One recorded position on a track. */
+        TakTrackPointDto: {
+            /**
+             * Format: date-time
+             * @description When the sender says the position was taken.
+             */
+            time: string;
+            /** Format: double */
+            lat: number;
+            /** Format: double */
+            lon: number;
+            /**
+             * Format: double
+             * @description Circular error in metres, or null when the sender did not say.
+             */
+            ce: number | null;
+            /** @description Reached Core more than a minute after its own time, for example relayed over a mesh. */
+            delayed: boolean;
+            /** @description A large circular error or a human estimate; never connected to other positions. */
+            approximate: boolean;
+        };
+        /** @description The recorded movement of one CoT UID, such as a member's device or a marker. */
+        TakTrackDto: {
+            uid: string;
+            /** @description Newest CoT type in the range. */
+            type: string;
+            callsign: string | null;
+            /** @description At least one position was the app's own beacon rather than a marker it placed. */
+            selfReported: boolean;
+            sender: components["schemas"]["TakTrackSenderDto"];
+            /** Format: double */
+            pointCount: number;
+            /**
+             * Format: double
+             * @description Positions dropped because another position of the same UID carried the same time.
+             */
+            duplicatesDropped: number;
+            /**
+             * @description Continuous parts ordered by time. Lines are drawn only inside a segment; a gap, an implausible
+             *     jump or an approximate position starts a new one.
+             */
+            segments: components["schemas"]["TakTrackPointDto"][][];
+        };
+        TakTrafficHistoryGroupDto: {
+            id: components["schemas"]["Uuid"];
+            name: string;
+        };
+        /** @description Recorded positions of an event within a time range, grouped into tracks. */
+        TakTrafficHistoryDto: {
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+            /** Format: double */
+            gapSeconds: number;
+            /** @description More positions were recorded than one answer holds; the newest ones are missing. */
+            truncated: boolean;
+            /**
+             * Format: double
+             * @description Most positions one answer contains.
+             */
+            maxPoints: number;
+            tracks: components["schemas"]["TakTrackDto"][];
+            /** @description The event's groups, for filtering. */
+            groups: components["schemas"]["TakTrafficHistoryGroupDto"][];
+        };
+        /** @enum {string} */
+        TakTrafficExportFormat: "geojson" | "gpx";
+        DeletedTakTrafficDto: {
+            /** Format: double */
+            deleted: number;
+        };
         /** @description The certificate the TAK listeners present. The private key is never returned. */
         TakServerCertificateDto: {
             /**
@@ -2493,6 +3143,11 @@ export interface components {
              * @description Lifetime of newly enrolled client certificates.
              */
             clientCertificateDays: number;
+            /**
+             * Format: double
+             * @description Hours after which a downloaded iTAK or WinTAK package that never connected is revoked.
+             */
+            unusedPackageHours: number;
             /** @description `null` until the server first starts or a certificate is added. */
             serverCertificate: components["schemas"]["TakServerCertificateDto"] | null;
             /** @description The reverse proxy's certificate files Core reads, relative to `certificateDirectory`; `null` unless used. */
@@ -2541,6 +3196,12 @@ export interface components {
             streamingPort: number;
             /** Format: int32 */
             clientCertificateDays: number;
+            /**
+             * Format: int32
+             * @description Hours after which a downloaded iTAK or WinTAK package that never connected is revoked; kept
+             *     when omitted.
+             */
+            unusedPackageHours?: number;
             /**
              * @description Required when this update moves a port to a non-standard value, or changes the host name or a
              *     port while apps are enrolled. Core never changes a public port on its own.
@@ -2631,10 +3292,24 @@ export interface components {
              */
             itakQrString: string | null;
             /**
-             * @description The still valid certificate from an earlier iTAK package download. A new package is refused
-             *     until it is revoked, so each downloaded package stays one device.
+             * Format: double
+             * @description Hours within which a downloaded iTAK or WinTAK package must connect once; otherwise its
+             *     certificate is revoked.
              */
-            itakPackageCertificateId: components["schemas"]["Uuid"] | null;
+            unusedPackageHours: number;
+        };
+        /**
+         * @description The app's own description from the `takv` and `contact` details of its position beacon. Set by
+         *     the app, so it names the device but proves nothing.
+         */
+        TakReportedDeviceDto: {
+            /** @description Device model, e.g. `iPhone 17`. */
+            name: string | null;
+            /** @description TAK app, e.g. `iTAK` or `WinTAK-CIV`. */
+            app: string | null;
+            appVersion: string | null;
+            os: string | null;
+            callsign: string | null;
         };
         /** @description A client certificate issued to a TAK app. Certificates are public; no key material exists here. */
         TakClientCertificateDto: {
@@ -2654,6 +3329,15 @@ export interface components {
             /** Format: date-time */
             revokedAt: string | null;
             revocationReason: string | null;
+            /**
+             * Format: date-time
+             * @description First streaming connection with this certificate; `null` while an app never connected.
+             */
+            firstConnectedAt: string | null;
+            /** Format: date-time */
+            lastConnectedAt: string | null;
+            /** @description What the app last reported about itself; `null` until it sent its own position. */
+            device: components["schemas"]["TakReportedDeviceDto"] | null;
             /**
              * @description Issued before the TAK server's host name or a port last changed; the app may still use the old
              *     endpoint and must enroll again.
@@ -2731,15 +3415,111 @@ export interface components {
             /** @description What happened, safe to show to the administrator. */
             message: string;
         };
+        TakGroupSummaryDto: {
+            id: components["schemas"]["Uuid"];
+            eventId: components["schemas"]["Uuid"];
+            name: string;
+            description: string | null;
+            /**
+             * Format: double
+             * @description Members that receive what is sent into the group.
+             */
+            receiverCount: number;
+            /**
+             * Format: double
+             * @description Members that send into the group.
+             */
+            senderCount: number;
+            /**
+             * Format: double
+             * @description Optimistic-concurrency version; send it back unchanged with updates.
+             */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        TakGroupPage: {
+            items: components["schemas"]["TakGroupSummaryDto"][];
+            page: components["schemas"]["PageInfo"];
+        };
+        /** @description A member's place in a TAK group: receiving what is sent into it (in), sending into it (out). */
+        TakGroupMemberDto: {
+            memberId: components["schemas"]["Uuid"];
+            receive: boolean;
+            send: boolean;
+        };
         /**
-         * @description TAK settings of a Meshtastic event. Every event sends TAK clients to the built-in TAK server;
-         *     Meshtastic events (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's
-         *     local TAK server, which carries CoT over this channel.
+         * @description A free TAK group of the advanced group mode, e.g. `Medics`. Members are assigned per group;
+         *     roles with `seesAllTakGroups` need no assignment.
+         */
+        TakGroupDto: {
+            id: components["schemas"]["Uuid"];
+            eventId: components["schemas"]["Uuid"];
+            name: string;
+            description: string | null;
+            /**
+             * Format: double
+             * @description Members that receive what is sent into the group.
+             */
+            receiverCount: number;
+            /**
+             * Format: double
+             * @description Members that send into the group.
+             */
+            senderCount: number;
+            /**
+             * Format: double
+             * @description Optimistic-concurrency version; send it back unchanged with updates.
+             */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            members: components["schemas"]["TakGroupMemberDto"][];
+        };
+        CreateTakGroupRequest: {
+            name: string;
+            description?: string | null;
+            members?: components["schemas"]["TakGroupMemberDto"][];
+        };
+        UpdateTakGroupRequest: {
+            /**
+             * Format: int32
+             * @description Version the client last read.
+             */
+            version: number;
+            name: string;
+            description: string | null;
+            /**
+             * @description Replaces the group's members; omit to keep them. Entries with neither `receive` nor `send`
+             *     are dropped.
+             */
+            members?: components["schemas"]["TakGroupMemberDto"][];
+        };
+        /** @enum {string} */
+        TakGroupMode: "off" | "simple" | "advanced";
+        /**
+         * @description TAK settings of an event. Every event sends TAK clients to the built-in TAK server; Meshtastic
+         *     events (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's local TAK
+         *     server, which carries CoT over the mesh channel. ATAK preferences have their own list
+         *     (`/events/{eventId}/tak/atak-preferences`).
          */
         TakConfigurationDto: {
             eventId: components["schemas"]["Uuid"];
             /** @description Channel for the app's "TAK Mesh Channel"; `null` uses the primary channel. */
             meshChannelId: components["schemas"]["Uuid"] | null;
+            /**
+             * @description `off`: every member sees the whole event. `simple`: members see only their event group.
+             *     `advanced`: members receive what is sent into the event's TAK groups they receive from
+             *     (`/events/{eventId}/tak/groups`). In both separating modes roles with `seesAllTakGroups` see
+             *     and reach everyone. Applies to live connections within seconds, without publishing.
+             */
+            groupMode: components["schemas"]["TakGroupMode"];
+            /** @description In the advanced mode, TAK apps list their groups and may switch them on and off. */
+            groupsInApp: boolean;
             /**
              * Format: double
              * @description Optimistic-concurrency version; 0 until first saved.
@@ -2755,6 +3535,136 @@ export interface components {
              */
             version: number;
             meshChannelId: components["schemas"]["Uuid"] | null;
+            /** @description Omit to keep the current mode. */
+            groupMode?: components["schemas"]["TakGroupMode"];
+            /** @description Omit to keep the current value. */
+            groupsInApp?: boolean;
+        };
+        /** @description Who an entry is for. Targets are event memberships, never OpenMeshTak accounts. */
+        AtakPreferenceTargetDto: {
+            /** @enum {string} */
+            type: "event" | "group" | "role" | "member";
+            /** @description The event group, role or member; `null` for the whole event. */
+            id: components["schemas"]["Uuid"] | null;
+        };
+        /** @enum {string} */
+        AtakPreferenceTypeDto: "string" | "boolean" | "integer" | "long" | "float";
+        /** @description One ATAK preference the event sends, as a `.pref` file stores it. */
+        AtakPreferenceEntryDto: {
+            target: components["schemas"]["AtakPreferenceTargetDto"];
+            /** @description The `<preference name>` group, usually `com.atakmap.app_preferences`. */
+            preference: string;
+            key: string;
+            /** @description The Java class ATAK stores; known keys must use the catalog's type. */
+            type: components["schemas"]["AtakPreferenceTypeDto"];
+            value: string;
+        };
+        /**
+         * @description The ATAK preferences every member's app receives through its device profile once a
+         *     configuration revision is published. For one member the most specific entry wins per key:
+         *     member, then role, then group, then the whole event. Removing an entry does not change a device;
+         *     set ATAK's default instead.
+         */
+        AtakPreferenceListDto: {
+            eventId: components["schemas"]["Uuid"];
+            entries: components["schemas"]["AtakPreferenceEntryDto"][];
+            /**
+             * Format: double
+             * @description Optimistic-concurrency version; 0 until first saved.
+             */
+            version: number;
+            /** Format: date-time */
+            updatedAt: string | null;
+        };
+        ReplaceAtakPreferencesRequest: {
+            /**
+             * Format: int32
+             * @description Version the client last read.
+             */
+            version: number;
+            entries: components["schemas"]["AtakPreferenceEntryDto"][];
+        };
+        SkippedAtakPreferenceDto: {
+            key: string;
+            message: string;
+        };
+        ImportAtakPreferencesResponse: {
+            list: components["schemas"]["AtakPreferenceListDto"];
+            /**
+             * Format: double
+             * @description Entries added to the whole event or replacing an event-wide entry of the same key.
+             */
+            importedCount: number;
+            /** @description Keys left out because OpenMeshTak sets them, they hold a secret or they belong to one person or device. */
+            removedKeys: string[];
+            /** @description Keys left out because their type or value does not match what ATAK expects. */
+            invalidKeys: components["schemas"]["SkippedAtakPreferenceDto"][];
+        };
+        ImportAtakPreferencesRequest: {
+            /**
+             * Format: int32
+             * @description Version the client last read.
+             */
+            version: number;
+            fileName: string;
+            /** @description The `.pref` file's text, such as ATAK's settings export. */
+            content: string;
+        };
+        AtakCatalogValueDto: {
+            value: string;
+            label: string;
+        };
+        AtakCatalogKeyDto: {
+            key: string;
+            /** @description Subgroup within the topic, such as "Altitude"; keys of a group are listed together. */
+            group: string;
+            type: components["schemas"]["AtakPreferenceTypeDto"];
+            /** @description ATAK's own default; `null` when ATAK sets none. */
+            defaultValue: string | null;
+            /** @description Allowed values of a list; `null` for free values. */
+            values: components["schemas"]["AtakCatalogValueDto"][] | null;
+            /** @description Text fields ATAK reads as numbers; they are still stored as strings. */
+            numeric: boolean;
+            description: string;
+            /**
+             * @description `form`: a ready field; `member`: only for one member; `warning`: allowed with a warning; `advanced`: hidden by default.
+             * @enum {string|null}
+             */
+            use: "form" | "member" | "warning" | "advanced" | null;
+        };
+        AtakCatalogTopicDto: {
+            id: string;
+            title: string;
+            description: string;
+            keys: components["schemas"]["AtakCatalogKeyDto"][];
+        };
+        /** @description A settings item that stores no value of its own, such as a link to another settings screen. */
+        AtakScreenItemDto: {
+            /** @description The item ID that `disablePreferenceItem_<id>` and `hidePreferenceItem_<id>` name. */
+            id: string;
+            /** @description Where the item is in ATAK, such as "Settings → Network". */
+            area: string;
+            description: string;
+        };
+        /**
+         * @description The ATAK preference keys this Core release knows, by topic, all in
+         *     `com.atakmap.app_preferences`. Other keys, such as plugin keys, may still be set.
+         *
+         *     Every catalog key and every screen item can also be greyed out or hidden in ATAK's settings
+         *     screens with the Boolean entries `disablePreferenceItem_<key>` and `hidePreferenceItem_<key>`;
+         *     other item IDs are refused.
+         */
+        AtakPreferenceCatalogDto: {
+            /** @description The ATAK version the catalog was read from. */
+            atakVersion: string;
+            topics: components["schemas"]["AtakCatalogTopicDto"][];
+            /** @description Settings items without a value key that can be greyed out or hidden as well. */
+            screenItems: components["schemas"]["AtakScreenItemDto"][];
+            /** @description Keys an event can never set, with the reason. */
+            blockedKeys: {
+                reason: string;
+                key: string;
+            }[];
         };
         SetupStatusResponse: {
             /** @description `false` until the first administrator exists; the Web app then opens the setup flow. */
@@ -2776,6 +3686,297 @@ export interface components {
             username: string;
             password: string;
             token: string;
+        };
+        /** @enum {string} */
+        PresetKind: "meshtastic" | "tak";
+        SettingsPresetSummaryDto: {
+            id: components["schemas"]["Uuid"];
+            kind: components["schemas"]["PresetKind"];
+            name: string;
+            description: string | null;
+            /** @description Meshtastic firmware or ATAK version the preset was made for. */
+            targetVersion: string | null;
+            /**
+             * Format: double
+             * @description Number of settings or ATAK preference entries.
+             */
+            itemCount: number;
+            /** Format: double */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        SettingsPresetPage: {
+            items: components["schemas"]["SettingsPresetSummaryDto"][];
+            page: components["schemas"]["PageInfo"];
+        };
+        /**
+         * @description Where a preset document came from. Free text such as `note` lets a person or an assistant say
+         *     what they changed; Core never acts on it.
+         */
+        PresetSourceDto: {
+            application?: string;
+            applicationVersion?: string;
+            /** @enum {string} */
+            exportedFrom?: "event" | "library";
+            note?: string;
+        };
+        /** @description Values of Meshtastic firmware-profile fields, keyed by field key. */
+        PresetMeshtasticSettings: {
+            [key: string]: string | number | boolean;
+        };
+        MeshtasticPresetContentDto: {
+            /**
+             * @description The firmware the settings were made for, such as `2.8`. Imports check every value against the
+             *     target event's own firmware profile instead.
+             */
+            firmwareVersion: string;
+            settings: components["schemas"]["PresetMeshtasticSettings"];
+        };
+        /**
+         * @description Who a portable ATAK preference is for. Groups and roles are named by their slug, because their
+         *     IDs only exist in one event; importing maps each one explicitly onto the target event.
+         */
+        PresetAtakTargetDto: {
+            /** @enum {string} */
+            type: "event" | "group" | "role";
+            slug?: string;
+            /** @description Display name in the source event. */
+            name?: string;
+        };
+        PresetAtakPreferenceDto: {
+            target: components["schemas"]["PresetAtakTargetDto"];
+            preference: string;
+            key: string;
+            type: components["schemas"]["AtakPreferenceTypeDto"];
+            value: string;
+        };
+        TakPresetContentDto: {
+            atakVersion?: string;
+            atakPreferences: components["schemas"]["PresetAtakPreferenceDto"][];
+        };
+        /**
+         * @description A portable, self-describing OpenMeshTak settings preset (`format` `openmeshtak-preset`). It is not
+         *     an ATAK `.pref`, a Meshtastic `.cfg` or a firmware profile. It never holds channel keys,
+         *     passwords, fixed PINs, certificates, tokens or member-specific values.
+         */
+        PresetDocumentDto: {
+            /** @description Always `openmeshtak-preset`. */
+            format: string;
+            /**
+             * Format: int32
+             * @description Format version; this Core reads version 1.
+             */
+            formatVersion: number;
+            kind: components["schemas"]["PresetKind"];
+            name: string;
+            description?: string;
+            /** @description Human-readable explanation of the format. Ignored on import. */
+            about?: string;
+            /** Format: date-time */
+            exportedAt?: string;
+            source?: components["schemas"]["PresetSourceDto"];
+            /** @description Present when `kind` is `meshtastic`. */
+            meshtastic?: components["schemas"]["MeshtasticPresetContentDto"];
+            /** @description Present when `kind` is `tak`. */
+            tak?: components["schemas"]["TakPresetContentDto"];
+        };
+        SettingsPresetDto: {
+            id: components["schemas"]["Uuid"];
+            kind: components["schemas"]["PresetKind"];
+            name: string;
+            description: string | null;
+            /** @description Meshtastic firmware or ATAK version the preset was made for. */
+            targetVersion: string | null;
+            /**
+             * Format: double
+             * @description Number of settings or ATAK preference entries.
+             */
+            itemCount: number;
+            /** Format: double */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            document: components["schemas"]["PresetDocumentDto"];
+        };
+        CreateSettingsPresetRequest: {
+            /** @description Name and description default to the document's. */
+            document: components["schemas"]["PresetDocumentDto"];
+            name?: string;
+            description?: string | null;
+        };
+        UpdateSettingsPresetRequest: {
+            /**
+             * Format: int32
+             * @description Version the client last read.
+             */
+            version: number;
+            name: string;
+            description: string | null;
+            /** @description Replaces the settings; omit to keep them. The kind cannot change. */
+            document?: components["schemas"]["PresetDocumentDto"];
+        };
+        PresetSettingChangeDto: {
+            key: string;
+            from: (string | number | boolean) | null;
+            to: string | number | boolean;
+        };
+        PresetSettingProblemDto: {
+            key: string;
+            message: string;
+        };
+        /**
+         * @description What importing a Meshtastic preset would change in the event's draft. Only `changed` values are
+         *     written; invalid and unsupported values are left out and current values stay.
+         */
+        MeshtasticPresetPreviewDto: {
+            /**
+             * Format: double
+             * @description Configuration version the preview was computed on; send it with the import.
+             */
+            version: number;
+            presetFirmwareVersion: string;
+            eventFirmwareVersion: string;
+            /** @description `false` when the preset was made for another firmware line than the event uses. */
+            sameFirmwareLine: boolean;
+            changed: components["schemas"]["PresetSettingChangeDto"][];
+            unchanged: string[];
+            /** @description Values the event's firmware profile rejects; the current value stays. */
+            invalid: components["schemas"]["PresetSettingProblemDto"][];
+            /** @description Keys the event's firmware cannot set: unknown, managed by OpenMeshTak, secret or newer. */
+            unsupported: string[];
+            /** @description Settings the preset does not mention; they keep their current value. */
+            notInPreset: string[];
+            /** @description Secrets set on the event. An import never changes them. */
+            secretsKept: string[];
+            /** @description Token to send with the import to confirm exactly this preview. */
+            confirmation: string;
+        };
+        PreviewMeshtasticPresetRequest: {
+            document: components["schemas"]["PresetDocumentDto"];
+        };
+        /** @description Values of a firmware profile's editable fields, keyed by field key. */
+        FirmwareSettingsDocument: {
+            [key: string]: string | number | boolean;
+        };
+        ConfigurationProblemDto: {
+            field: string;
+            code: string;
+            message: string;
+        };
+        MeshtasticConfigurationDto: {
+            eventId: components["schemas"]["Uuid"];
+            /** @description Recommended firmware: a line such as `2.8` or a minimum patch such as `2.8.3`. */
+            firmwareVersion: string;
+            /** @description The given patch or the profile minimum; `null` when the version is no longer supported. */
+            effectiveMinimumVersion: string | null;
+            profileId: string | null;
+            /** @description `false` when no tested patch reaches the effective minimum version. */
+            verified: boolean;
+            settings: components["schemas"]["FirmwareSettingsDocument"];
+            /** @description Secret fields available for the event's firmware version, set through `PUT secrets`. */
+            secretFields: string[];
+            /** @description Keys of secret fields that hold a value. The values themselves are never returned. */
+            secretsSet: string[];
+            /** @description Why the stored configuration is not valid for this Core release; empty when it is. */
+            problems: components["schemas"]["ConfigurationProblemDto"][];
+            /**
+             * Format: double
+             * @description Optimistic-concurrency version; 0 until the configuration is first saved.
+             */
+            version: number;
+            /** Format: date-time */
+            updatedAt: string | null;
+        };
+        ApplyMeshtasticPresetRequest: {
+            /**
+             * Format: int32
+             * @description Version the preview returned.
+             */
+            version: number;
+            document: components["schemas"]["PresetDocumentDto"];
+            confirmation: string;
+        };
+        PresetTargetDto: {
+            /** @enum {string} */
+            type: "group" | "role";
+            slug: string;
+            name: string;
+            /** Format: double */
+            entryCount: number;
+            /** @description A group or role of the target event with the same slug or name; never applied unless mapped. */
+            suggestedTargetId: components["schemas"]["Uuid"] | null;
+            /** @description The mapping sent with this preview; absent while unmapped. */
+            mapping?: {
+                targetId: components["schemas"]["Uuid"] | null;
+            };
+        };
+        PresetEntryChangeDto: {
+            target: components["schemas"]["AtakPreferenceTargetDto"];
+            preference: string;
+            key: string;
+            type: components["schemas"]["AtakPreferenceTypeDto"];
+            /** @description The event's current value for the same target and key; `null` when the key is new. */
+            from: string | null;
+            to: string;
+        };
+        PresetEntryProblemDto: {
+            target: components["schemas"]["PresetAtakTargetDto"];
+            key: string;
+            message: string;
+        };
+        /**
+         * @description What importing a TAK preset would change in the event's ATAK preference draft. Entries are merged:
+         *     a preset entry replaces the event's entry for the same target and key, other entries stay.
+         */
+        TakPresetPreviewDto: {
+            /**
+             * Format: double
+             * @description ATAK preference list version the preview was computed on; send it with the import.
+             */
+            version: number;
+            presetAtakVersion: string | null;
+            catalogAtakVersion: string;
+            /** @description Groups and roles the preset targets; each needs an explicit mapping. */
+            targets: components["schemas"]["PresetTargetDto"][];
+            added: components["schemas"]["PresetEntryChangeDto"][];
+            changed: components["schemas"]["PresetEntryChangeDto"][];
+            /** Format: double */
+            unchanged: number;
+            /** @description Entries the catalog or the target event rejects; they are left out. */
+            invalid: components["schemas"]["PresetEntryProblemDto"][];
+            /**
+             * Format: double
+             * @description Entries of groups or roles mapped to `null`.
+             */
+            skipped: number;
+            /** @description `null` until every group and role is mapped. */
+            confirmation: string | null;
+        };
+        /** @description Maps a group or role of a preset onto the target event; `targetId` `null` leaves its entries out. */
+        PresetTargetMappingDto: {
+            /** @enum {string} */
+            type: "group" | "role";
+            slug: string;
+            targetId: components["schemas"]["Uuid"] | null;
+        };
+        PreviewTakPresetRequest: {
+            document: components["schemas"]["PresetDocumentDto"];
+            mappings?: components["schemas"]["PresetTargetMappingDto"][];
+        };
+        ApplyTakPresetRequest: {
+            /**
+             * Format: int32
+             * @description Version the preview returned.
+             */
+            version: number;
+            document: components["schemas"]["PresetDocumentDto"];
+            mappings: components["schemas"]["PresetTargetMappingDto"][];
+            confirmation: string;
         };
         /** @enum {string} */
         ServerLogLevel: "trace" | "debug" | "info" | "warn" | "error" | "fatal";
@@ -3006,6 +4207,390 @@ export interface components {
             /** @description Effective grants, deduplicated across all sources. */
             permissions: components["schemas"]["PermissionGrantDto"][];
         };
+        /**
+         * @description `package`: a Data Package, published as revisions and installed by members. `mission`: an ATAK
+         *     Data Sync mission edited with the same editor; each revision is synced to subscribed TAK apps.
+         * @enum {string}
+         */
+        DataPackageKind: "package" | "mission";
+        PackageSnapshotLayer: {
+            id: string;
+            name: string;
+            /** Format: double */
+            sortOrder: number;
+            visible: boolean;
+        };
+        /** @enum {string} */
+        PackageObjectKind: "point" | "line" | "polygon" | "circle" | "rectangle" | "ellipse" | "route";
+        /** @description GeoJSON position: `[longitude, latitude]` or `[longitude, latitude, altitudeMetresHae]`. */
+        Position: number[];
+        PointGeometry: {
+            /** @enum {string} */
+            type: "Point";
+            coordinates: components["schemas"]["Position"];
+        };
+        LineStringGeometry: {
+            /** @enum {string} */
+            type: "LineString";
+            coordinates: components["schemas"]["Position"][];
+        };
+        PolygonGeometry: {
+            /** @enum {string} */
+            type: "Polygon";
+            /** @description Outer ring first, then holes; every ring repeats its first position at the end. */
+            coordinates: components["schemas"]["Position"][][];
+        };
+        /**
+         * @description A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as
+         *     a silently approximated polygon and maps to ATAK `u-d-c-c` circles.
+         */
+        CircleGeometry: {
+            /** @enum {string} */
+            type: "Circle";
+            /** @description Centre position. */
+            coordinates: components["schemas"]["Position"];
+            /**
+             * Format: double
+             * @description Radius in metres.
+             */
+            radius: number;
+        };
+        RectangleGeometry: {
+            /** @enum {string} */
+            type: "Rectangle";
+            /** @description Four corners in drawing order, without a repeated closing position. */
+            coordinates: components["schemas"]["Position"][];
+        };
+        EllipseGeometry: {
+            /** @enum {string} */
+            type: "Ellipse";
+            /** @description Centre; axes are semi-axis lengths, matching TAK's ellipse major/minor. */
+            coordinates: components["schemas"]["Position"];
+            /** Format: double */
+            major: number;
+            /** Format: double */
+            minor: number;
+            /**
+             * Format: double
+             * @description Bearing of the major axis clockwise from north, in degrees.
+             */
+            rotation: number;
+        };
+        /** @description TAK routes refer to their own stable point identifiers in navigation cues. */
+        RoutePointId: string;
+        RoutePoint: {
+            id: components["schemas"]["RoutePointId"];
+            /** @enum {string} */
+            type: "waypoint" | "checkpoint";
+            name: string;
+            remarks: string;
+        };
+        RouteOption: string;
+        RouteOptions: {
+            transportationType?: components["schemas"]["RouteOption"];
+            method?: components["schemas"]["RouteOption"];
+            direction?: components["schemas"]["RouteOption"];
+            routeType?: components["schemas"]["RouteOption"];
+            order?: components["schemas"]["RouteOption"];
+            planningMethod?: components["schemas"]["RouteOption"];
+            prefix?: components["schemas"]["RouteOption"];
+        };
+        RouteCueTrigger: {
+            /** @enum {string} */
+            mode: "d" | "t";
+            /** Format: int32 */
+            value: number;
+        };
+        RouteNavigationCue: {
+            pointId: components["schemas"]["RoutePointId"];
+            text: string;
+            voice: string;
+            triggers: components["schemas"]["RouteCueTrigger"][];
+        };
+        RouteGeometry: {
+            /** @enum {string} */
+            type: "Route";
+            /** @description Ordered route positions; each has matching metadata in `points`. */
+            coordinates: components["schemas"]["Position"][];
+            points: components["schemas"]["RoutePoint"][];
+            options: components["schemas"]["RouteOptions"];
+            navigationCues: components["schemas"]["RouteNavigationCue"][];
+        };
+        /** @description RFC 7946 semantics in WGS84, with explicit parametric shapes and ordered TAK routes. */
+        PackageGeometry: components["schemas"]["PointGeometry"] | components["schemas"]["LineStringGeometry"] | components["schemas"]["PolygonGeometry"] | components["schemas"]["CircleGeometry"] | components["schemas"]["RectangleGeometry"] | components["schemas"]["EllipseGeometry"] | components["schemas"]["RouteGeometry"];
+        /** @description Colour as `#RRGGBB`. */
+        HexColor: string;
+        /**
+         * @description How lines, outlines and circles are drawn; ATAK writes it as `strokeStyle`.
+         * @enum {string}
+         */
+        StrokeStyle: "solid" | "dashed" | "dotted" | "outlined" | "custom";
+        /**
+         * @description ATAK Span display units; the stored height itself is always metres.
+         * @enum {number}
+         */
+        HeightUnit: 0 | 1 | 2 | 3 | 4 | 5;
+        /** @enum {string} */
+        ExtrudeMode: "cylinder" | "cone_down";
+        /** @enum {string} */
+        ArrowHeads: "none" | "start" | "end" | "both";
+        /** @enum {string} */
+        DistanceUnit: "m" | "km" | "ft" | "mi" | "nm";
+        SectorStyle: {
+            /**
+             * Format: double
+             * @description True heading clockwise from north.
+             */
+            heading: number;
+            /** Format: double */
+            sweep: number;
+            /**
+             * Format: double
+             * @description Metres.
+             */
+            radius: number;
+            /** Format: double */
+            rangeLines?: number | null;
+            displayLabels?: boolean;
+            visible?: boolean;
+        };
+        BullseyeStyle: {
+            /** Format: double */
+            ringDistance: number;
+            /** Format: int32 */
+            ringCount: number;
+            ringsVisible: boolean;
+            edgeToCenter: boolean;
+        };
+        /** @description Construct a type with a set of properties K of type T */
+        "Record_string.string_": {
+            [key: string]: string;
+        };
+        /** @description Source-confirmed 2525D control measures; this deliberately excludes single-point symbols. */
+        TacticalGraphicStyle: {
+            sidc: string;
+            /** @description Native __milsym unitmodifier codes, bounded and validated against the selected graphic. */
+            modifiers: components["schemas"]["Record_string.string_"];
+        };
+        PackageObjectStyle: {
+            /** @description Marker, line and polygon outline colour. */
+            color: components["schemas"]["HexColor"];
+            /**
+             * Format: int32
+             * @description Line and outline width in pixels.
+             */
+            strokeWidth: number;
+            /**
+             * Format: double
+             * @description Polygon and circle fill opacity.
+             */
+            fillOpacity: number;
+            /** @description Line style of lines, outlines and circles; `solid` when left out. */
+            strokeStyle?: components["schemas"]["StrokeStyle"];
+            /** @description Fill colour of areas and circles; `null` or left out fills with `color`. */
+            fillColor?: components["schemas"]["HexColor"] | null;
+            /**
+             * Format: double
+             * @description Shape extrusion height in metres, independent of coordinate altitude. Null/absent is unknown.
+             */
+            height?: number | null;
+            /** @description Preferred TAK height display unit (0 km, 1 m, 2 mi, 3 yd, 4 ft, 5 NM). */
+            heightUnit?: components["schemas"]["HeightUnit"] | null;
+            /** @description Circle extrusion mode; absent uses the client's default. */
+            extrudeMode?: components["schemas"]["ExtrudeMode"] | null;
+            /** @description Endpoint arrowheads for lines; absent means none. CoT/KML export the underlying line. */
+            arrowHeads?: components["schemas"]["ArrowHeads"];
+            /**
+             * Format: int32
+             * @description Arrowhead length in screen pixels, independent of map zoom.
+             */
+            arrowHeadSize?: number;
+            /** @description Direction indicators following route point order; absent means false. Web presentation only. */
+            routeDirectionArrows?: boolean;
+            /**
+             * Format: int32
+             * @description Distance between route indicators in screen pixels.
+             */
+            routeArrowSpacing?: number;
+            /** @description Saved, exactly two-point true Range & Bearing line. */
+            rangeBearing?: boolean;
+            distanceUnit?: components["schemas"]["DistanceUnit"];
+            /** @description Coverage sector centred at a Point; polygon export is an approximation. */
+            sector?: components["schemas"]["SectorStyle"] | null;
+            /**
+             * Format: double
+             * @description Full corridor width in metres around a line/route; null disables it.
+             */
+            corridorWidth?: number | null;
+            /** @description Alternating dash/gap lengths in screen pixels; custom line style only. */
+            dashPattern?: number[] | null;
+            /** @description Marker hideLabel / shape labels_on; defaults to visible. */
+            labelVisible?: boolean;
+            /** @description Native u-r-b-c-c presentation of Circle geometry. */
+            rangeCircle?: boolean;
+            /** Format: int32 */
+            rangeRings?: number;
+            bullseye?: components["schemas"]["BullseyeStyle"] | null;
+            /** @enum {string} */
+            bearingUnit?: "degrees" | "mils" | "radians" | "warsaw-mils" | "streck" | "clock";
+            /**
+             * Format: double
+             * @description Distance outside a shape in metres; native MSD. Incompatible with route/R&B/bullseye.
+             */
+            minimumSafeDistance?: number | null;
+            msdColor?: components["schemas"]["HexColor"] | null;
+            tacticalGraphic?: components["schemas"]["TacticalGraphicStyle"] | null;
+        };
+        /**
+         * @description CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly
+         *     infantry).
+         */
+        CotType: string;
+        /** @description Optional TAK presentation of a marker, kept so ATAK packages round-trip without loss. */
+        TakMarker: {
+            /** @description Defaults to the spot marker `b-m-p-s-m`; `a-*` types are drawn as military symbols. */
+            cotType: components["schemas"]["CotType"];
+            /**
+             * @description ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom
+             *     icon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.
+             */
+            iconsetPath: string | null;
+        };
+        PackageSnapshotObject: {
+            /** @description Derived export-only visual association; never written into canonical draft objects. */
+            supplementParent?: string;
+            id: string;
+            layerId: string;
+            kind: components["schemas"]["PackageObjectKind"];
+            name: string;
+            description: string | null;
+            geometry: components["schemas"]["PackageGeometry"];
+            style: components["schemas"]["PackageObjectStyle"];
+            tak: components["schemas"]["TakMarker"] | null;
+        };
+        /** @description An ATAK tile cache of the revision, copied tile by tile through the tiles endpoint. */
+        OfflineTileContentDto: {
+            id: components["schemas"]["Uuid"];
+            layerId: components["schemas"]["Uuid"];
+            /** @enum {string} */
+            kind: "tiles";
+            name: string;
+            /** Format: double */
+            minZoom: number;
+            /** Format: double */
+            maxZoom: number;
+            /** @description West, south, east, north in WGS84 degrees. */
+            bounds: number[];
+            /** Format: double */
+            tiles: number;
+            /**
+             * Format: double
+             * @description Size of the stored cache in bytes; the tiles alone usually need less.
+             */
+            size: number;
+        };
+        /** @description A rubber sheet of the revision, downloaded as one image through the image endpoint. */
+        OfflineImageContentDto: {
+            id: components["schemas"]["Uuid"];
+            layerId: components["schemas"]["Uuid"];
+            /** @enum {string} */
+            kind: "image";
+            name: string;
+            /** @description Lower left, lower right, upper right and upper left corner as [longitude, latitude]. */
+            corners: number[][];
+            /** @enum {string} */
+            mediaType: "image/png" | "image/jpeg";
+            /** @description SHA-256 of the image bytes, checked by the browser after the download. */
+            sha256: string;
+            /** Format: double */
+            size: number;
+        };
+        OfflineContentDto: components["schemas"]["OfflineTileContentDto"] | components["schemas"]["OfflineImageContentDto"];
+        /** @description Content of the revision that the offline view cannot show, listed so nothing is dropped silently. */
+        OfflineSkippedContentDto: {
+            id: components["schemas"]["Uuid"];
+            name: string;
+            kind: string;
+            /** @enum {string} */
+            reason: "not-displayable" | "unreadable";
+        };
+        OfflineSnapshotPackageDto: {
+            packageId: components["schemas"]["Uuid"];
+            kind: components["schemas"]["DataPackageKind"];
+            name: string;
+            /** Format: double */
+            revision: number;
+            revisionId: components["schemas"]["Uuid"];
+            /** @description SHA-256 of the published revision snapshot, for provenance. */
+            snapshotHash: string;
+            /** Format: date-time */
+            publishedAt: string;
+            layers: components["schemas"]["PackageSnapshotLayer"][];
+            objects: components["schemas"]["PackageSnapshotObject"][];
+            contents: components["schemas"]["OfflineContentDto"][];
+            skippedContents: components["schemas"]["OfflineSkippedContentDto"][];
+        };
+        /**
+         * @description Everything the browser stores for the offline HQ view of one event: published revisions only,
+         *     never drafts, credentials, certificates, channel keys or member data.
+         */
+        OfflineSnapshotDto: {
+            /**
+             * Format: double
+             * @description Version of this document; the browser refuses formats it does not know.
+             */
+            format: number;
+            event: {
+                timeZone: string;
+                name: string;
+                id: components["schemas"]["Uuid"];
+            };
+            /** Format: date-time */
+            preparedAt: string;
+            packages: components["schemas"]["OfflineSnapshotPackageDto"][];
+            /** @description Selected packages without a published revision. */
+            skippedPackages: {
+                /** @enum {string} */
+                reason: "not-published";
+                name: string;
+                packageId: components["schemas"]["Uuid"];
+            }[];
+            /**
+             * Format: double
+             * @description Approximate bytes the browser has to store: tile caches plus images.
+             */
+            estimatedBytes: number;
+        };
+        OfflineSnapshotSelection: {
+            packageId: components["schemas"]["Uuid"];
+            /**
+             * Format: int32
+             * @description Published revision to take; the newest one when omitted.
+             */
+            revision?: number;
+        };
+        CreateOfflineSnapshotRequest: {
+            /** @description Published Data Packages or missions to make available offline. */
+            packages: components["schemas"]["OfflineSnapshotSelection"][];
+        };
+        OfflineTileDto: {
+            /** Format: double */
+            z: number;
+            /** Format: double */
+            x: number;
+            /** Format: double */
+            y: number;
+            /** @enum {string} */
+            mediaType: "image/png" | "image/jpeg";
+            /** @description Base64-encoded tile image. */
+            data: string;
+            /** @description SHA-256 of the decoded tile bytes, checked by the browser. */
+            sha256: string;
+        };
+        OfflineTilePage: {
+            items: components["schemas"]["OfflineTileDto"][];
+            page: components["schemas"]["PageInfo"];
+        };
         FirmwareReleaseDto: {
             /** @description `major.minor.patch`, e.g. `2.8.1`. */
             version: string;
@@ -3123,39 +4708,6 @@ export interface components {
             fields: components["schemas"]["FirmwareFieldDto"][];
             /** @description Allowed values per enum with English UI labels. */
             enums: components["schemas"]["Record_string.FirmwareEnumValueDto-Array_"];
-        };
-        /** @description Values of a firmware profile's editable fields, keyed by field key. */
-        FirmwareSettingsDocument: {
-            [key: string]: string | number | boolean;
-        };
-        ConfigurationProblemDto: {
-            field: string;
-            code: string;
-            message: string;
-        };
-        MeshtasticConfigurationDto: {
-            eventId: components["schemas"]["Uuid"];
-            /** @description Recommended firmware: a line such as `2.8` or a minimum patch such as `2.8.3`. */
-            firmwareVersion: string;
-            /** @description The given patch or the profile minimum; `null` when the version is no longer supported. */
-            effectiveMinimumVersion: string | null;
-            profileId: string | null;
-            /** @description `false` when no tested patch reaches the effective minimum version. */
-            verified: boolean;
-            settings: components["schemas"]["FirmwareSettingsDocument"];
-            /** @description Secret fields available for the event's firmware version, set through `PUT secrets`. */
-            secretFields: string[];
-            /** @description Keys of secret fields that hold a value. The values themselves are never returned. */
-            secretsSet: string[];
-            /** @description Why the stored configuration is not valid for this Core release; empty when it is. */
-            problems: components["schemas"]["ConfigurationProblemDto"][];
-            /**
-             * Format: double
-             * @description Optimistic-concurrency version; 0 until the configuration is first saved.
-             */
-            version: number;
-            /** Format: date-time */
-            updatedAt: string | null;
         };
         UpdateMeshtasticSettingsRequest: {
             /**
@@ -3401,29 +4953,42 @@ export interface components {
         ClaimExchangeRequest: {
             token: string;
         };
-        /** @description The Web map's online base map. Defaults to OpenStreetMap until an administrator changes it. */
+        /** @description One mutually exclusive XYZ base map; package overlays remain separate. */
+        BaseMapLayerDto: {
+            providerName: string;
+            tileUrlTemplate: string;
+            attribution: string;
+            /** Format: int32 */
+            maxZoom: number;
+            id: components["schemas"]["Uuid"];
+        };
+        /** @description Legacy top-level fields mirror the default layer. */
         MapSettingsDto: {
             providerName: string;
-            /** @description XYZ tile URL with `{z}`, `{x}` and `{y}`; `{a-c}` selects subdomains. */
             tileUrlTemplate: string;
-            /** @description Plain-text attribution the provider requires; the Web app shows it on every map. */
             attribution: string;
-            /** Format: double */
+            /** Format: int32 */
             maxZoom: number;
             /**
              * Format: double
              * @description Optimistic-concurrency version; 0 while the default is in use.
              */
             version: number;
+            layers: components["schemas"]["BaseMapLayerDto"][];
+            defaultLayerId: components["schemas"]["Uuid"];
         };
         UpdateMapSettingsRequest: {
-            /** Format: int32 */
-            version: number;
             providerName: string;
             tileUrlTemplate: string;
             attribution: string;
             /** Format: int32 */
             maxZoom: number;
+            /** Format: int32 */
+            version: number;
+            /** @description Omit to update only the existing default layer, preserving other layers. */
+            layers?: components["schemas"]["BaseMapLayerDto"][];
+            /** @description Must refer to a supplied layer; otherwise the first supplied layer is the default. */
+            defaultLayerId?: components["schemas"]["Uuid"];
         };
         /** @description How this installation presents itself. Public, because the sign-in page shows it. */
         InstanceSettingsDto: {
@@ -3439,6 +5004,49 @@ export interface components {
             /** Format: int32 */
             version: number;
             name: string;
+        };
+        IconSettingsDto: {
+            /**
+             * Format: double
+             * @description Optimistic-concurrency version; 0 until the first upload.
+             */
+            version: number;
+            /** Format: double */
+            icons: number;
+            /** Format: double */
+            sets: number;
+            /** Format: double */
+            groups: number;
+            updatedAt: string | null;
+        };
+        ImportReportEntry: {
+            /** @description Which input feature this is about, e.g. `Feature 3 (Rally point)`. */
+            feature: string;
+            message: string;
+        };
+        UpdateIconSettingsResult: {
+            settings: components["schemas"]["IconSettingsDto"];
+            /** Format: double */
+            accepted: number;
+            rejected: components["schemas"]["ImportReportEntry"][];
+        };
+        /** @description Operator-provided PNG icon, identified by its original TAK path. */
+        PackageIconDto: {
+            id: components["schemas"]["Uuid"];
+            path: string;
+            setName: string;
+            group: string;
+            filename: string;
+            cotType: string | null;
+            /** Format: double */
+            width: number;
+            /** Format: double */
+            height: number;
+        };
+        InstanceIconCatalogue: {
+            /** Format: double */
+            version: number;
+            icons: components["schemas"]["PackageIconDto"][];
         };
         HealthResponse: {
             /** @enum {string} */
@@ -3647,6 +5255,11 @@ export interface components {
              */
             takRoleOverride: components["schemas"]["TakRole"] | null;
             /**
+             * @description Members of this role see and reach every event group when the event separates TAK groups,
+             *     e.g. platoon leaders.
+             */
+            seesAllTakGroups: boolean;
+            /**
              * Format: double
              * @description Optimistic-concurrency version; send it back unchanged with updates.
              */
@@ -3665,6 +5278,7 @@ export interface components {
             slug: components["schemas"]["Slug"];
             description?: string | null;
             takRoleOverride?: components["schemas"]["TakRole"] | null;
+            seesAllTakGroups?: boolean;
         };
         UpdateEventRoleRequest: {
             /**
@@ -3677,6 +5291,8 @@ export interface components {
             description: string | null;
             /** @description Omit to keep the current override; `null` removes it. */
             takRoleOverride?: components["schemas"]["TakRole"] | null;
+            /** @description Omit to keep the current value. */
+            seesAllTakGroups?: boolean;
         };
         /** @enum {string} */
         SyncIssueStatus: "open" | "resolved";
@@ -3948,23 +5564,47 @@ export interface components {
             profileSha256: string;
             settings: components["schemas"]["FirmwareSettingsDocument"];
         };
+        /** @description Who an entry is for: the whole event, or one event group, role or member. */
+        AtakPreferenceTarget: {
+            /** @enum {string} */
+            type: "event";
+        } | {
+            id: string;
+            /** @enum {string} */
+            type: "group" | "role" | "member";
+        };
+        /** @enum {string} */
+        AtakPreferenceType: "string" | "boolean" | "integer" | "long" | "float";
+        /** @description An event's preference with its target, as stored and published. */
+        TargetedAtakPreference: {
+            /** @description The `<preference name>` group, such as `com.atakmap.app_preferences`. */
+            preference: string;
+            key: string;
+            type: components["schemas"]["AtakPreferenceType"];
+            value: string;
+            target: components["schemas"]["AtakPreferenceTarget"];
+        };
         CurrentTakConfiguration: {
             meshChannelId: string | null;
+            /** @description The event's ATAK preferences with their targets; each member's app gets its resolved share. */
+            atakPreferences: components["schemas"]["TargetedAtakPreference"][];
         };
         /**
-         * @description The Meshtastic app's TAK mesh channel; `null` in revisions created before version 4. Revisions
-         *     before version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced.
+         * @description The Meshtastic app's TAK mesh channel and the ATAK preferences; `null` in revisions created
+         *     before version 4, and without ATAK preferences before version 7. Version 7 stored preferences
+         *     without targets, which all reached the whole event. Revisions before version 6 also stored a
+         *     connection mode, which the switch `meshtasticEnabled` replaced.
          */
         SnapshotTak: components["schemas"]["CurrentTakConfiguration"];
         /**
          * @description Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.
          *     Version 2 added `channels` in device order, the first being the primary channel; version 3
          *     added `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added
-         *     `meshtasticEnabled`.
+         *     `meshtasticEnabled`; version 7 added `tak.atakPreferences`; version 8 gave each preference a target.
          */
         ConfigurationSnapshot: {
             /** @enum {number} */
-            schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
+            schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
             /**
              * @description Whether the event provisions Meshtastic radios; `true` in revisions before version 6. When
              *     `false`, `channels` is empty and `meshtastic` is `null`.
@@ -3994,6 +5634,30 @@ export interface components {
             /** @description `false` when the configuration was unchanged and the latest revision is returned instead. */
             created: boolean;
             revision: components["schemas"]["ConfigurationRevisionDto"];
+        };
+        /** @enum {string} */
+        ConfigurationChangeArea: "event" | "roles" | "groups" | "channels" | "meshtastic" | "tak";
+        /** @enum {string} */
+        ConfigurationChangeKind: "added" | "removed" | "changed";
+        ConfigurationChangeDto: {
+            area: components["schemas"]["ConfigurationChangeArea"];
+            kind: components["schemas"]["ConfigurationChangeKind"];
+            /** @description Name of the role, group or channel, a Meshtastic setting key, or a short description. */
+            name: string;
+            /** @description Dotted paths of the changed fields of a changed item; empty otherwise. */
+            fields: string[];
+        };
+        PendingConfigurationChangesDto: {
+            /**
+             * Format: double
+             * @description Number of the revision participants receive; `null` before the first one.
+             */
+            publishedRevision: number | null;
+            /**
+             * @description What publishing would change. Empty when nothing is pending, and always empty for drafts
+             *     (activation publishes) and archived events (read-only).
+             */
+            changes: components["schemas"]["ConfigurationChangeDto"][];
         };
         /** @enum {string} */
         SmtpSecurity: "starttls" | "tls" | "none";
@@ -4040,10 +5704,10 @@ export interface components {
             expiresAt: string;
         };
         /** @enum {string} */
-        DownloadGrantKind: "device-profile" | "member-data-package" | "tak-connection-package" | "itak-connection-package";
+        DownloadGrantKind: "device-profile" | "member-data-package" | "tak-connection-package" | "itak-connection-package" | "wintak-connection-package" | "atak-unlock-package";
         CreateDownloadGrantRequest: {
             kind: components["schemas"]["DownloadGrantKind"];
-            /** @description Required for `device-profile` and `member-data-package`. */
+            /** @description Required for `device-profile`, `member-data-package` and `atak-unlock-package`. */
             eventId?: components["schemas"]["Uuid"];
             /** @description Required for `device-profile` and `member-data-package`. */
             memberId?: components["schemas"]["Uuid"];
@@ -4066,91 +5730,6 @@ export interface components {
         PackageRevisionPage: {
             items: components["schemas"]["PackageRevisionSummaryDto"][];
             page: components["schemas"]["PageInfo"];
-        };
-        PackageSnapshotLayer: {
-            id: string;
-            name: string;
-            /** Format: double */
-            sortOrder: number;
-            visible: boolean;
-        };
-        /** @enum {string} */
-        PackageObjectKind: "point" | "line" | "polygon" | "circle";
-        /** @description GeoJSON position: `[longitude, latitude]` or `[longitude, latitude, altitudeMetresHae]`. */
-        Position: number[];
-        PointGeometry: {
-            /** @enum {string} */
-            type: "Point";
-            coordinates: components["schemas"]["Position"];
-        };
-        LineStringGeometry: {
-            /** @enum {string} */
-            type: "LineString";
-            coordinates: components["schemas"]["Position"][];
-        };
-        PolygonGeometry: {
-            /** @enum {string} */
-            type: "Polygon";
-            /** @description Outer ring first, then holes; every ring repeats its first position at the end. */
-            coordinates: components["schemas"]["Position"][][];
-        };
-        /**
-         * @description A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as
-         *     a silently approximated polygon and maps to ATAK `u-d-c-c` circles.
-         */
-        CircleGeometry: {
-            /** @enum {string} */
-            type: "Circle";
-            /** @description Centre position. */
-            coordinates: components["schemas"]["Position"];
-            /**
-             * Format: double
-             * @description Radius in metres.
-             */
-            radius: number;
-        };
-        /** @description RFC 7946 geometry in WGS84, plus circles as an explicit domain extension. */
-        PackageGeometry: components["schemas"]["PointGeometry"] | components["schemas"]["LineStringGeometry"] | components["schemas"]["PolygonGeometry"] | components["schemas"]["CircleGeometry"];
-        /** @description Colour as `#RRGGBB`. */
-        HexColor: string;
-        PackageObjectStyle: {
-            /** @description Marker, line and polygon outline colour. */
-            color: components["schemas"]["HexColor"];
-            /**
-             * Format: int32
-             * @description Line and outline width in pixels.
-             */
-            strokeWidth: number;
-            /**
-             * Format: double
-             * @description Polygon fill opacity; the fill uses `color`.
-             */
-            fillOpacity: number;
-        };
-        /**
-         * @description CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly
-         *     infantry).
-         */
-        CotType: string;
-        /** @description Optional TAK presentation of a marker, kept so ATAK packages round-trip without loss. */
-        TakMarker: {
-            /** @description Defaults to the spot marker `b-m-p-s-m`; `a-*` types are drawn as military symbols. */
-            cotType: components["schemas"]["CotType"];
-            /**
-             * @description ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom
-             *     icon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.
-             */
-            iconsetPath: string | null;
-        };
-        PackageSnapshotObject: {
-            id: string;
-            layerId: string;
-            kind: components["schemas"]["PackageObjectKind"];
-            name: string;
-            description: string | null;
-            geometry: components["schemas"]["PackageGeometry"];
-            style: components["schemas"]["PackageObjectStyle"];
-            tak: components["schemas"]["TakMarker"] | null;
         };
         PackageSnapshotContent: {
             id: string;
@@ -4196,6 +5775,17 @@ export interface components {
             created: boolean;
             revision: components["schemas"]["PackageRevisionDto"];
         };
+        PresentationLoss: {
+            objectId: string;
+            objectName: string;
+            code: string;
+            message: string;
+        };
+        PresentationReport: {
+            /** @enum {string} */
+            format: "cot" | "kml";
+            losses: components["schemas"]["PresentationLoss"][];
+        };
         DataPackageContentSummary: {
             /** Format: double */
             points: number;
@@ -4205,6 +5795,12 @@ export interface components {
             polygons: number;
             /** Format: double */
             circles: number;
+            /** Format: double */
+            rectangles?: number;
+            /** Format: double */
+            ellipses?: number;
+            /** Format: double */
+            routes?: number;
             /**
              * Format: double
              * @description Offline map caches, including nested map packages.
@@ -4244,6 +5840,7 @@ export interface components {
         DataPackageDto: {
             id: components["schemas"]["Uuid"];
             eventId: components["schemas"]["Uuid"];
+            kind: components["schemas"]["DataPackageKind"];
             name: string;
             description: string | null;
             /**
@@ -4264,6 +5861,8 @@ export interface components {
             /** @description Published package revisions whose content was copied into this package's initial draft. */
             sources: components["schemas"]["DataPackageSourceDto"][];
             audience: components["schemas"]["PackageAudience"];
+            /** @description Missions only: who may change the mission from a TAK app; empty for packages. */
+            writers: components["schemas"]["EventAudience"];
             takDelivery: components["schemas"]["PackageTakDelivery"];
             /**
              * Format: double
@@ -4281,8 +5880,10 @@ export interface components {
             updatedAt: string;
         };
         ReorderDataPackagesRequest: {
-            /** @description Every data package of the event, bottom first; the last one is drawn on top. */
+            /** @description Every data package of the event of `kind`, bottom first; the last one is drawn on top. */
             packageIds: string[];
+            /** @description Packages and missions are ordered separately; `package` when omitted. */
+            kind?: components["schemas"]["DataPackageKind"];
         };
         PackageObjectDto: {
             id: components["schemas"]["Uuid"];
@@ -4302,9 +5903,28 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
-        PackageObjectPage: {
-            items: components["schemas"]["PackageObjectDto"][];
-            page: components["schemas"]["PageInfo"];
+        BatchPackageObjectsResponse: {
+            updated: components["schemas"]["PackageObjectDto"][];
+            created: components["schemas"]["PackageObjectDto"][];
+            deletedIds: components["schemas"]["Uuid"][];
+        };
+        BatchPackageObjectUpdate: {
+            /** Format: int32 */
+            version: number;
+            /** @description Moving an object to another layer of the same data package is allowed. */
+            layerId: components["schemas"]["Uuid"];
+            name: string;
+            description: string | null;
+            geometry: components["schemas"]["PackageGeometry"];
+            style: components["schemas"]["PackageObjectStyle"];
+            /** @description Markers only; send `null` for a plain spot marker. */
+            tak: components["schemas"]["TakMarker"] | null;
+            id: components["schemas"]["Uuid"];
+        };
+        BatchPackageObjectDelete: {
+            id: components["schemas"]["Uuid"];
+            /** Format: int32 */
+            version: number;
         };
         CreatePackageObjectRequest: {
             layerId: components["schemas"]["Uuid"];
@@ -4315,6 +5935,17 @@ export interface components {
             style?: components["schemas"]["PackageObjectStyle"];
             /** @description Markers only. */
             tak?: components["schemas"]["TakMarker"] | null;
+        };
+        /** @description Atomic changes in one draft. Any conflict or locked layer rejects the entire batch. */
+        BatchPackageObjectsRequest: {
+            updates: components["schemas"]["BatchPackageObjectUpdate"][];
+            deletes: components["schemas"]["BatchPackageObjectDelete"][];
+            /** @description Restores deleted objects with new server IDs, in request order. */
+            creates: components["schemas"]["CreatePackageObjectRequest"][];
+        };
+        PackageObjectPage: {
+            items: components["schemas"]["PackageObjectDto"][];
+            page: components["schemas"]["PageInfo"];
         };
         UpdatePackageObjectRequest: {
             /** Format: int32 */
@@ -4327,11 +5958,6 @@ export interface components {
             style: components["schemas"]["PackageObjectStyle"];
             /** @description Markers only; send `null` for a plain spot marker. */
             tak: components["schemas"]["TakMarker"] | null;
-        };
-        ImportReportEntry: {
-            /** @description Which input feature this is about, e.g. `Feature 3 (Rally point)`. */
-            feature: string;
-            message: string;
         };
         /** @description Outcome of a GeoJSON or ATAK import; every input item appears somewhere in it. */
         ImportReport: {
@@ -4414,7 +6040,14 @@ export interface components {
         CreateDataPackageCopyRequest: {
             name: string;
             description?: string | null;
-            /** @description Published package revisions and optional layer selections to copy. */
+            /** @description The kind of the new package, e.g. `mission` to start a mission from published packages; `package` when omitted. */
+            kind?: components["schemas"]["DataPackageKind"];
+            /**
+             * @description Copy current drafts explicitly; defaults to immutable published revisions. Draft selections cannot specify revision numbers.
+             * @enum {string}
+             */
+            source?: "published" | "draft";
+            /** @description Source packages and optional layer selections to copy. */
             packages: components["schemas"]["CombinedExportSelection"][];
         };
         RubberSheetDto: {
@@ -4436,12 +6069,12 @@ export interface components {
             /** Format: double */
             tiles: number;
         };
-        /** @description Map content kept from an imported ATAK Data Package; exported unchanged with its layer. */
+        /** @description Imported map content (exported unchanged), or an operator-provided editor-only icon library. */
         PackageContentDto: {
             id: components["schemas"]["Uuid"];
             layerId: components["schemas"]["Uuid"];
             /** @enum {string} */
-            kind: "offline-map" | "nested-data-package" | "rubber-sheet";
+            kind: "offline-map" | "nested-data-package" | "rubber-sheet" | "icon-library";
             name: string;
             /**
              * Format: double
@@ -4475,6 +6108,12 @@ export interface components {
             /** Format: double */
             opacity: number;
         };
+        IconLibraryImportResult: {
+            contentId: components["schemas"]["Uuid"];
+            /** Format: double */
+            accepted: number;
+            rejected: components["schemas"]["ImportReportEntry"][];
+        };
         DataPackagePage: {
             items: components["schemas"]["DataPackageDto"][];
             page: components["schemas"]["PageInfo"];
@@ -4482,6 +6121,8 @@ export interface components {
         CreateDataPackageRequest: {
             name: string;
             description?: string | null;
+            /** @description Fixed at creation; `package` when omitted. */
+            kind?: components["schemas"]["DataPackageKind"];
         };
         UpdateDataPackageRequest: {
             /**
@@ -4499,6 +6140,14 @@ export interface components {
              */
             version: number;
             audience: components["schemas"]["PackageAudience"];
+        };
+        UpdatePackageWritersRequest: {
+            /**
+             * Format: int32
+             * @description Version the client last read.
+             */
+            version: number;
+            writers: components["schemas"]["EventAudience"];
         };
         UpdatePackageTakDeliveryRequest: {
             /**
@@ -4534,6 +6183,7 @@ export interface components {
             included: components["schemas"]["CombinedExportIncluded"][];
             skipped: components["schemas"]["CombinedExportSkipped"][];
             nameClashes: components["schemas"]["CombinedExportNameClash"][];
+            presentationLosses: components["schemas"]["PresentationLoss"][];
         };
         CombinedExportRequest: {
             /** @description Name of the combined Data Package; defaults to the event name. */
@@ -5837,6 +7487,190 @@ export interface operations {
             };
         };
     };
+    GetTakTrafficHistory: {
+        parameters: {
+            query: {
+                /** @description RFC 3339 instant with offset. */
+                from: string;
+                /** @description RFC 3339 instant with offset. */
+                to: string;
+                groupId?: components["schemas"]["Uuid"];
+                /** @description CoT UID of one track. */
+                uid?: string;
+                /** @description Seconds without a position after which a track is broken. Default 300. */
+                gapSeconds?: number;
+            };
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recorded tracks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakTrafficHistoryDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ExportTakTracks: {
+        parameters: {
+            query: {
+                format: components["schemas"]["TakTrafficExportFormat"];
+                from: string;
+                to: string;
+                groupId?: components["schemas"]["Uuid"];
+                uid?: string;
+                gapSeconds?: number;
+            };
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tracks as GeoJSON or GPX */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    DeleteRecordedTakTraffic: {
+        parameters: {
+            query?: {
+                uid?: string;
+            };
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recorded traffic deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedTakTrafficDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     GetTakServerSettings: {
         parameters: {
             query?: never;
@@ -6255,6 +8089,53 @@ export interface operations {
                 };
             };
             /** @description TAK server not enabled, or an earlier iTAK package certificate is still valid */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetWintakConnectionPackage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description WinTAK Connection Data Package */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description No TAK access */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description TAK server not enabled, or an earlier WinTAK package certificate is still valid */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6757,6 +8638,302 @@ export interface operations {
             };
         };
     };
+    ListTakGroups: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description TAK groups */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakGroupPage"];
+                };
+            };
+            /** @description Invalid cursor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    CreateTakGroup: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Makes retries safe: a repeated request returns the original response. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTakGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description TAK group created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakGroupDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Name already in use or event archived; Idempotency-Key conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetTakGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                groupId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description TAK group */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakGroupDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateTakGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                groupId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTakGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description TAK group updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakGroupDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict, name already in use or event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    DeleteTakGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                groupId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description TAK group deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     GetTakConfiguration: {
         parameters: {
             query?: never;
@@ -6868,6 +9045,275 @@ export interface operations {
             };
         };
     };
+    GetAtakPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ATAK preferences */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtakPreferenceListDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ReplaceAtakPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplaceAtakPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description ATAK preferences replaced */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtakPreferenceListDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict or event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ImportAtakPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportAtakPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description ATAK preferences imported */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportAtakPreferencesResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict or event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    DownloadAtakUnlockPackage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ATAK unlock Data Package */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The event never restricted a settings item */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetAtakPreferenceCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ATAK preference catalog */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtakPreferenceCatalogDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     GetSetupStatus: {
         parameters: {
             query?: never;
@@ -6908,6 +9354,639 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SetupResponse"];
+                };
+            };
+        };
+    };
+    ListSettingsPresets: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["PresetKind"];
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Presets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsPresetPage"];
+                };
+            };
+            /** @description Invalid cursor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    CreateSettingsPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSettingsPresetRequest"];
+            };
+        };
+        responses: {
+            /** @description Preset saved */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsPresetDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid preset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetSettingsPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                presetId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Preset */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsPresetDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateSettingsPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                presetId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSettingsPresetRequest"];
+            };
+        };
+        responses: {
+            /** @description Preset updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsPresetDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid preset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    DeleteSettingsPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                presetId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Preset deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ExportMeshtasticPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Meshtastic preset */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresetDocumentDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    PreviewMeshtasticPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewMeshtasticPresetRequest"];
+            };
+        };
+        responses: {
+            /** @description Import preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeshtasticPresetPreviewDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid preset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ImportMeshtasticPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyMeshtasticPresetRequest"];
+            };
+        };
+        responses: {
+            /** @description Preset imported into the draft */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeshtasticConfigurationDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict, unconfirmed import or event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid preset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ExportTakPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description TAK preset */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresetDocumentDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    PreviewTakPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewTakPresetRequest"];
+            };
+        };
+        responses: {
+            /** @description Import preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakPresetPreviewDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid preset or mapping */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ImportTakPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyTakPresetRequest"];
+            };
+        };
+        responses: {
+            /** @description Preset imported into the draft */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtakPreferenceListDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict, unconfirmed import or event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid preset or mapping */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
@@ -7423,6 +10502,211 @@ export interface operations {
             };
             /** @description Authentication required */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    CreateOfflineSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOfflineSnapshotRequest"];
+            };
+        };
+        responses: {
+            /** @description Offline snapshot document */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfflineSnapshotDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Event not active */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListOfflineTiles: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                packageId: components["schemas"]["Uuid"];
+                number: number;
+                contentId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tile page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfflineTilePage"];
+                };
+            };
+            /** @description Invalid cursor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Event not active */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetOfflineImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                packageId: components["schemas"]["Uuid"];
+                number: number;
+                contentId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rubber-sheet image */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Event not active */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8970,6 +12254,230 @@ export interface operations {
             };
             /** @description Validation failed */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetIconSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Icon settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IconSettingsDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateIconSettings: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Icon database imported */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateIconSettingsResult"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Upload too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unsupported upload */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid icon database */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ClearSettings: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Icon database removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IconSettingsDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetCatalogue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Icon catalogue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceIconCatalogue"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version: number;
+                iconId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Icon image */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10812,6 +14320,46 @@ export interface operations {
             };
         };
     };
+    GetPendingConfigurationChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending configuration changes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingConfigurationChangesDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     GetConfigurationRevision: {
         parameters: {
             query?: never;
@@ -11257,6 +14805,60 @@ export interface operations {
             };
         };
     };
+    Report: {
+        parameters: {
+            query: {
+                format: "cot" | "kml";
+                revision?: number;
+                layerId?: components["schemas"]["Uuid"];
+            };
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                packageId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Presentation differences */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresentationReport"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     ReorderDataPackages: {
         parameters: {
             query?: never;
@@ -11318,6 +14920,80 @@ export interface operations {
                 };
             };
             /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    BatchPackageObjects: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                packageId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchPackageObjectsRequest"];
+            };
+        };
+        responses: {
+            /** @description Batch saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchPackageObjectsResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict, locked layer or archived event */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid batch or geometry */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12777,11 +16453,202 @@ export interface operations {
             };
         };
     };
+    ImportPackageIcons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                packageId: components["schemas"]["Uuid"];
+                layerId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Icon library imported */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IconLibraryImportResult"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Layer locked, event archived or too many libraries */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Upload too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unsupported upload */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Invalid icon database */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListIcons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                packageId: components["schemas"]["Uuid"];
+                contentId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Icons */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageIconDto"][];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetIconImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                packageId: components["schemas"]["Uuid"];
+                contentId: components["schemas"]["Uuid"];
+                iconId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Icon image */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     ListDataPackages: {
         parameters: {
             query?: {
                 limit?: number;
                 cursor?: string;
+                kind?: components["schemas"]["DataPackageKind"];
             };
             header?: never;
             path: {
@@ -13144,6 +17011,78 @@ export interface operations {
                 };
             };
             /** @description Version conflict or event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateMissionWriters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                packageId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePackageWritersRequest"];
+            };
+        };
+        responses: {
+            /** @description Writers updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataPackageDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict, not a mission or event archived */
             409: {
                 headers: {
                     [name: string]: unknown;
