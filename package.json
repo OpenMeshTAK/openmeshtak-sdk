@@ -38,7 +38,7 @@
     "clean": "node scripts/clean.mjs",
     "build": "pnpm clean && pnpm generate && tsc -p tsconfig.build.json",
     "typecheck": "pnpm generate && tsc --noEmit",
-    "test": "pnpm build && node --test",
+    "test": "pnpm build && node --test \"test/*.test.mjs\"",
     "license:check": "node scripts/check-licenses.mjs",
     "release:notices": "node scripts/write-release-notices.mjs",
     "version:check": "node scripts/check-version.mjs",
@@ -52,6 +52,7 @@
   "devDependencies": {
     "@types/node": "24.19.1",
     "openapi-typescript": "7.13.0",
+    "playwright-core": "1.63.0",
     "typescript": "5.9.3"
   },
   "repository": {
