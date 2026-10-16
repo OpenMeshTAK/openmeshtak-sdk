@@ -2,15 +2,25 @@ import createClient, { type Client, type ClientOptions } from "openapi-fetch";
 import type { paths } from "./generated/schema.js";
 import { OpenMeshTakApiError } from "./errors.js";
 import type {
+  BatchPackageObjectsRequest,
+  BatchPackageObjectsResult,
   ConfigurationRevision,
   ConfigurationRevisionPage,
+  CreateDataPackageCopyRequest,
+  CreateDataPackageRequest,
   CreateEventGroupRequest,
   CreateEventMemberAccountRequest,
   CreateEventMemberRequest,
   CreateEventRequest,
   CreateEventRoleRequest,
+  CreateMeshtasticChannelRequest,
+  CreatePackageLayerRequest,
+  CreatePackageObjectRequest,
   CreatedEventMemberAccount,
   CreatedMemberClaim,
+  DataPackage,
+  DataPackagePage,
+  DownloadDataPackageOptions,
   Event,
   EventGroup,
   EventGroupPage,
@@ -23,19 +33,37 @@ import type {
   ExternalMemberSyncRequest,
   ExternalMemberSyncResult,
   ExternalProvider,
+  ListDataPackagesOptions,
   ListEventsOptions,
+  ListPackageObjectsOptions,
   ListSyncIssuesOptions,
   MemberClaim,
+  MeshtasticChannel,
+  MeshtasticChannelPage,
+  PackageLayer,
+  PackageLayerPage,
+  PackageObject,
+  PackageObjectPage,
+  PackageRevision,
+  PackageRevisionPage,
   PageOptions,
   Principal,
   PublishConfigurationResult,
+  PublishDataPackageResult,
+  ReleaseMeshtasticChannelRequest,
   ResolvedProfile,
   RetrySyncIssueRequest,
+  RotateMeshtasticChannelPskRequest,
   SyncIssuePage,
+  UpdateDataPackageAudienceRequest,
+  UpdateDataPackageRequest,
   UpdateEventGroupRequest,
   UpdateEventMemberRequest,
   UpdateEventRequest,
   UpdateEventRoleRequest,
+  UpdateMeshtasticChannelRequest,
+  UpdatePackageLayerRequest,
+  UpdatePackageObjectRequest,
 } from "./types.js";
 
 export type ApiKeyProvider = string | (() => string | Promise<string>);
@@ -392,6 +420,303 @@ export class OpenMeshTakClient {
     return unwrap(
       this.#api.GET("/events/{eventId}/configuration-revisions/{revisionId}", {
         params: { path: { eventId, revisionId } },
+      }),
+    );
+  }
+
+  // Data Packages and missions
+
+  listDataPackages(eventId: string, options: ListDataPackagesOptions = {}): Promise<DataPackagePage> {
+    return unwrap(this.#api.GET("/events/{eventId}/data-packages", { params: { path: { eventId }, query: options } }));
+  }
+
+  createDataPackage(
+    eventId: string,
+    body: CreateDataPackageRequest,
+    options: IdempotentRequestOptions = {},
+  ): Promise<DataPackage> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/data-packages", {
+        params: { path: { eventId }, header: idempotencyHeader(options) },
+        body,
+      }),
+    );
+  }
+
+  /** Creates a new package from published revisions (or drafts) of existing packages. */
+  copyDataPackages(
+    eventId: string,
+    body: CreateDataPackageCopyRequest,
+    options: IdempotentRequestOptions = {},
+  ): Promise<DataPackage> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/data-package-copies", {
+        params: { path: { eventId }, header: idempotencyHeader(options) },
+        body,
+      }),
+    );
+  }
+
+  getDataPackage(eventId: string, packageId: string): Promise<DataPackage> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/data-packages/{packageId}", { params: { path: { eventId, packageId } } }),
+    );
+  }
+
+  /** Renames or describes the package; `body.version` must be the version last read. */
+  updateDataPackage(eventId: string, packageId: string, body: UpdateDataPackageRequest): Promise<DataPackage> {
+    return unwrap(
+      this.#api.PUT("/events/{eventId}/data-packages/{packageId}", { params: { path: { eventId, packageId } }, body }),
+    );
+  }
+
+  updateDataPackageAudience(
+    eventId: string,
+    packageId: string,
+    body: UpdateDataPackageAudienceRequest,
+  ): Promise<DataPackage> {
+    return unwrap(
+      this.#api.PUT("/events/{eventId}/data-packages/{packageId}/audience", {
+        params: { path: { eventId, packageId } },
+        body,
+      }),
+    );
+  }
+
+  deleteDataPackage(eventId: string, packageId: string): Promise<void> {
+    return unwrapEmpty(
+      this.#api.DELETE("/events/{eventId}/data-packages/{packageId}", { params: { path: { eventId, packageId } } }),
+    );
+  }
+
+  /** Publishes the draft as a new revision; `created` is false when the draft is unchanged. */
+  publishDataPackage(
+    eventId: string,
+    packageId: string,
+    options: IdempotentRequestOptions = {},
+  ): Promise<PublishDataPackageResult> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/data-packages/{packageId}/revisions", {
+        params: { path: { eventId, packageId }, header: idempotencyHeader(options) },
+      }),
+    );
+  }
+
+  listDataPackageRevisions(eventId: string, packageId: string, options: PageOptions = {}): Promise<PackageRevisionPage> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/data-packages/{packageId}/revisions", {
+        params: { path: { eventId, packageId }, query: options },
+      }),
+    );
+  }
+
+  getDataPackageRevision(eventId: string, packageId: string, revision: number): Promise<PackageRevision> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/data-packages/{packageId}/revisions/{number}", {
+        params: { path: { eventId, packageId, number: revision } },
+      }),
+    );
+  }
+
+  /** Downloads a published revision as an ATAK Data Package ZIP; `layerId` limits it to one layer. */
+  async downloadDataPackageRevision(
+    eventId: string,
+    packageId: string,
+    revision: number,
+    options: DownloadDataPackageOptions = {},
+  ): Promise<Blob> {
+    // The contract describes the ZIP as a string; read the binary body as a Blob instead.
+    const archive: unknown = await unwrap(
+      this.#api.GET("/events/{eventId}/data-packages/{packageId}/revisions/{number}/atak", {
+        params: { path: { eventId, packageId, number: revision }, query: options },
+        parseAs: "blob",
+      }),
+    );
+    return archive as Blob;
+  }
+
+  // Data Package layers
+
+  listPackageLayers(eventId: string, packageId: string, options: PageOptions = {}): Promise<PackageLayerPage> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/data-packages/{packageId}/layers", {
+        params: { path: { eventId, packageId }, query: options },
+      }),
+    );
+  }
+
+  createPackageLayer(
+    eventId: string,
+    packageId: string,
+    body: CreatePackageLayerRequest,
+    options: IdempotentRequestOptions = {},
+  ): Promise<PackageLayer> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/data-packages/{packageId}/layers", {
+        params: { path: { eventId, packageId }, header: idempotencyHeader(options) },
+        body,
+      }),
+    );
+  }
+
+  updatePackageLayer(
+    eventId: string,
+    packageId: string,
+    layerId: string,
+    body: UpdatePackageLayerRequest,
+  ): Promise<PackageLayer> {
+    return unwrap(
+      this.#api.PUT("/events/{eventId}/data-packages/{packageId}/layers/{layerId}", {
+        params: { path: { eventId, packageId, layerId } },
+        body,
+      }),
+    );
+  }
+
+  deletePackageLayer(eventId: string, packageId: string, layerId: string): Promise<void> {
+    return unwrapEmpty(
+      this.#api.DELETE("/events/{eventId}/data-packages/{packageId}/layers/{layerId}", {
+        params: { path: { eventId, packageId, layerId } },
+      }),
+    );
+  }
+
+  // Data Package objects
+
+  listPackageObjects(
+    eventId: string,
+    packageId: string,
+    options: ListPackageObjectsOptions = {},
+  ): Promise<PackageObjectPage> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/data-packages/{packageId}/objects", {
+        params: { path: { eventId, packageId }, query: options },
+      }),
+    );
+  }
+
+  createPackageObject(
+    eventId: string,
+    packageId: string,
+    body: CreatePackageObjectRequest,
+    options: IdempotentRequestOptions = {},
+  ): Promise<PackageObject> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/data-packages/{packageId}/objects", {
+        params: { path: { eventId, packageId }, header: idempotencyHeader(options) },
+        body,
+      }),
+    );
+  }
+
+  /** Creates, updates and deletes several objects in one request. */
+  batchPackageObjects(
+    eventId: string,
+    packageId: string,
+    body: BatchPackageObjectsRequest,
+    options: IdempotentRequestOptions = {},
+  ): Promise<BatchPackageObjectsResult> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/data-packages/{packageId}/objects/batch", {
+        params: { path: { eventId, packageId }, header: idempotencyHeader(options) },
+        body,
+      }),
+    );
+  }
+
+  getPackageObject(eventId: string, packageId: string, objectId: string): Promise<PackageObject> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/data-packages/{packageId}/objects/{objectId}", {
+        params: { path: { eventId, packageId, objectId } },
+      }),
+    );
+  }
+
+  updatePackageObject(
+    eventId: string,
+    packageId: string,
+    objectId: string,
+    body: UpdatePackageObjectRequest,
+  ): Promise<PackageObject> {
+    return unwrap(
+      this.#api.PUT("/events/{eventId}/data-packages/{packageId}/objects/{objectId}", {
+        params: { path: { eventId, packageId, objectId } },
+        body,
+      }),
+    );
+  }
+
+  deletePackageObject(eventId: string, packageId: string, objectId: string): Promise<void> {
+    return unwrapEmpty(
+      this.#api.DELETE("/events/{eventId}/data-packages/{packageId}/objects/{objectId}", {
+        params: { path: { eventId, packageId, objectId } },
+      }),
+    );
+  }
+
+  // Meshtastic channels. Channel reads describe the key without revealing it; revealing a PSK
+  // stays out of this convenience layer.
+
+  listMeshtasticChannels(eventId: string, options: PageOptions = {}): Promise<MeshtasticChannelPage> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/meshtastic/channels", { params: { path: { eventId }, query: options } }),
+    );
+  }
+
+  /** Omit `body.psk` to let Core generate a random key. */
+  createMeshtasticChannel(eventId: string, body: CreateMeshtasticChannelRequest): Promise<MeshtasticChannel> {
+    return unwrap(this.#api.POST("/events/{eventId}/meshtastic/channels", { params: { path: { eventId } }, body }));
+  }
+
+  getMeshtasticChannel(eventId: string, channelId: string): Promise<MeshtasticChannel> {
+    return unwrap(
+      this.#api.GET("/events/{eventId}/meshtastic/channels/{channelId}", { params: { path: { eventId, channelId } } }),
+    );
+  }
+
+  updateMeshtasticChannel(
+    eventId: string,
+    channelId: string,
+    body: UpdateMeshtasticChannelRequest,
+  ): Promise<MeshtasticChannel> {
+    return unwrap(
+      this.#api.PUT("/events/{eventId}/meshtastic/channels/{channelId}", {
+        params: { path: { eventId, channelId } },
+        body,
+      }),
+    );
+  }
+
+  deleteMeshtasticChannel(eventId: string, channelId: string): Promise<void> {
+    return unwrapEmpty(
+      this.#api.DELETE("/events/{eventId}/meshtastic/channels/{channelId}", { params: { path: { eventId, channelId } } }),
+    );
+  }
+
+  /** Replaces the channel key; omit `body.psk` for a random key. The result never contains the key. */
+  rotateMeshtasticChannelPsk(
+    eventId: string,
+    channelId: string,
+    body: RotateMeshtasticChannelPskRequest,
+  ): Promise<MeshtasticChannel> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/meshtastic/channels/{channelId}/psk/rotate", {
+        params: { path: { eventId, channelId } },
+        body,
+      }),
+    );
+  }
+
+  /** Releases a withheld secret channel to its whole audience. */
+  releaseMeshtasticChannel(
+    eventId: string,
+    channelId: string,
+    body: ReleaseMeshtasticChannelRequest,
+  ): Promise<MeshtasticChannel> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/meshtastic/channels/{channelId}/release", {
+        params: { path: { eventId, channelId } },
+        body,
       }),
     );
   }

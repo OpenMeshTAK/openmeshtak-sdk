@@ -129,6 +129,41 @@ test("maps every convenience method to its OpenAPI operation", async () => {
     [() => client.listConfigurationRevisions(e), "GET", "/events/e1/configuration-revisions"],
     [() => client.publishConfiguration(e), "POST", "/events/e1/configuration-revisions"],
     [() => client.getConfigurationRevision(e, "v1"), "GET", "/events/e1/configuration-revisions/v1"],
+    [() => client.listDataPackages(e, { kind: "mission" }), "GET", "/events/e1/data-packages?kind=mission"],
+    [() => client.createDataPackage(e, {}), "POST", "/events/e1/data-packages"],
+    [() => client.copyDataPackages(e, {}), "POST", "/events/e1/data-package-copies"],
+    [() => client.getDataPackage(e, "p1"), "GET", "/events/e1/data-packages/p1"],
+    [() => client.updateDataPackage(e, "p1", {}), "PUT", "/events/e1/data-packages/p1"],
+    [() => client.updateDataPackageAudience(e, "p1", {}), "PUT", "/events/e1/data-packages/p1/audience"],
+    [() => client.deleteDataPackage(e, "p1"), "DELETE", "/events/e1/data-packages/p1"],
+    [() => client.publishDataPackage(e, "p1"), "POST", "/events/e1/data-packages/p1/revisions"],
+    [() => client.listDataPackageRevisions(e, "p1", { limit: 5 }), "GET", "/events/e1/data-packages/p1/revisions?limit=5"],
+    [() => client.getDataPackageRevision(e, "p1", 3), "GET", "/events/e1/data-packages/p1/revisions/3"],
+    [() => client.listPackageLayers(e, "p1"), "GET", "/events/e1/data-packages/p1/layers"],
+    [() => client.createPackageLayer(e, "p1", {}), "POST", "/events/e1/data-packages/p1/layers"],
+    [() => client.updatePackageLayer(e, "p1", "l1", {}), "PUT", "/events/e1/data-packages/p1/layers/l1"],
+    [() => client.deletePackageLayer(e, "p1", "l1"), "DELETE", "/events/e1/data-packages/p1/layers/l1"],
+    [
+      () => client.listPackageObjects(e, "p1", { layerId: "l1" }),
+      "GET",
+      "/events/e1/data-packages/p1/objects?layerId=l1",
+    ],
+    [() => client.createPackageObject(e, "p1", {}), "POST", "/events/e1/data-packages/p1/objects"],
+    [() => client.batchPackageObjects(e, "p1", {}), "POST", "/events/e1/data-packages/p1/objects/batch"],
+    [() => client.getPackageObject(e, "p1", "o1"), "GET", "/events/e1/data-packages/p1/objects/o1"],
+    [() => client.updatePackageObject(e, "p1", "o1", {}), "PUT", "/events/e1/data-packages/p1/objects/o1"],
+    [() => client.deletePackageObject(e, "p1", "o1"), "DELETE", "/events/e1/data-packages/p1/objects/o1"],
+    [() => client.listMeshtasticChannels(e), "GET", "/events/e1/meshtastic/channels"],
+    [() => client.createMeshtasticChannel(e, {}), "POST", "/events/e1/meshtastic/channels"],
+    [() => client.getMeshtasticChannel(e, "c1"), "GET", "/events/e1/meshtastic/channels/c1"],
+    [() => client.updateMeshtasticChannel(e, "c1", {}), "PUT", "/events/e1/meshtastic/channels/c1"],
+    [() => client.deleteMeshtasticChannel(e, "c1"), "DELETE", "/events/e1/meshtastic/channels/c1"],
+    [
+      () => client.rotateMeshtasticChannelPsk(e, "c1", { version: 1 }),
+      "POST",
+      "/events/e1/meshtastic/channels/c1/psk/rotate",
+    ],
+    [() => client.releaseMeshtasticChannel(e, "c1", { version: 1 }), "POST", "/events/e1/meshtastic/channels/c1/release"],
   ];
 
   for (const [call, method, path] of calls) {
@@ -157,6 +192,12 @@ test("sends an Idempotency-Key only when the caller passes one", async () => {
     () => client.createEventGroup("e1", {}, key),
     () => client.createEventMember("e1", {}, key),
     () => client.publishConfiguration("e1", key),
+    () => client.createDataPackage("e1", {}, key),
+    () => client.copyDataPackages("e1", {}, key),
+    () => client.publishDataPackage("e1", "p1", key),
+    () => client.createPackageLayer("e1", "p1", {}, key),
+    () => client.createPackageObject("e1", "p1", {}, key),
+    () => client.batchPackageObjects("e1", "p1", {}, key),
   ];
   for (const call of calls) {
     await call();
@@ -195,6 +236,24 @@ test("exposes Retry-After of an idempotent request that is still running", async
     assert.equal(error.retryAfterSeconds, 1);
     return true;
   });
+});
+
+test("downloads a published Data Package revision as a binary ZIP", async () => {
+  const zip = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0xff, 0x00]);
+  const requests = [];
+  const client = createOpenMeshTakClient({
+    baseUrl: "https://example.test",
+    fetch: async (request) => {
+      requests.push(request);
+      return new Response(zip, { status: 200, headers: { "content-type": "application/zip" } });
+    },
+  });
+
+  const archive = await client.downloadDataPackageRevision("e1", "p1", 2, { layerId: "l1" });
+  const url = new URL(requests[0].url);
+  assert.equal(`${url.pathname}${url.search}`, "/api/v1/events/e1/data-packages/p1/revisions/2/atak?layerId=l1");
+  assert.equal(archive instanceof Blob, true);
+  assert.deepEqual(new Uint8Array(await archive.arrayBuffer()), zip);
 });
 
 test("paginate follows opaque cursors until the last page", async () => {

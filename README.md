@@ -59,14 +59,29 @@ Each method maps to one API operation and throws `OpenMeshTakApiError` on a prob
 - Sync issues: `listSyncIssues`, `retrySyncIssue`
 - Member claims: `listMemberClaims`, `createMemberClaim`, `revokeMemberClaim`
 - Configuration: `listConfigurationRevisions`, `publishConfiguration`, `getConfigurationRevision`
+- Data Packages and missions: `listDataPackages`, `createDataPackage`, `copyDataPackages`,
+  `getDataPackage`, `updateDataPackage`, `updateDataPackageAudience`, `deleteDataPackage`,
+  `publishDataPackage`, `listDataPackageRevisions`, `getDataPackageRevision`,
+  `downloadDataPackageRevision` (ATAK Data Package ZIP as a `Blob`)
+- Data Package layers: `listPackageLayers`, `createPackageLayer`, `updatePackageLayer`,
+  `deletePackageLayer`
+- Data Package objects: `listPackageObjects`, `createPackageObject`, `batchPackageObjects`,
+  `getPackageObject`, `updatePackageObject`, `deletePackageObject`
+- Meshtastic channels: `listMeshtasticChannels`, `createMeshtasticChannel`, `getMeshtasticChannel`,
+  `updateMeshtasticChannel`, `deleteMeshtasticChannel`, `rotateMeshtasticChannelPsk`,
+  `releaseMeshtasticChannel`
 
 `createEventMemberAccount` and `createMemberClaim` return single-use links. Send them only to the
 person they are for and never log them.
 
+Channel responses describe the pre-shared key without revealing it. Revealing a PSK is left to the
+generated client on purpose.
+
 ## Safe retries
 
-`createEvent`, `createEventRole`, `createEventGroup`, `createEventMember` and
-`publishConfiguration` accept an `Idempotency-Key`. Pass your own key and reuse it when you retry
+`createEvent`, `createEventRole`, `createEventGroup`, `createEventMember`, `publishConfiguration`,
+`createDataPackage`, `copyDataPackages`, `publishDataPackage`, `createPackageLayer`,
+`createPackageObject` and `batchPackageObjects` accept an `Idempotency-Key`. Pass your own key and reuse it when you retry
 the same request after a timeout or network error; Core then returns the original response instead
 of creating a duplicate:
 
