@@ -2,6 +2,7 @@ export {
   createOpenMeshTakClient,
   OpenMeshTakClient,
   type ApiKeyProvider,
+  type IdempotentRequestOptions,
   type OpenMeshTakClientOptions,
 } from "./client.js";
 export { OpenMeshTakApiError, type ProblemDetails } from "./errors.js";

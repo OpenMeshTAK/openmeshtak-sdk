@@ -140,6 +140,63 @@ test("maps every convenience method to its OpenAPI operation", async () => {
   assert.equal(await client.deleteEventRole(e, "r1"), undefined);
 });
 
+test("sends an Idempotency-Key only when the caller passes one", async () => {
+  const requests = [];
+  const client = createOpenMeshTakClient({
+    baseUrl: "https://example.test",
+    fetch: async (request) => {
+      requests.push(request);
+      return jsonResponse({}, 201);
+    },
+  });
+  const key = { idempotencyKey: "01JTESTKEY" };
+
+  const calls = [
+    () => client.createEvent({}, key),
+    () => client.createEventRole("e1", {}, key),
+    () => client.createEventGroup("e1", {}, key),
+    () => client.createEventMember("e1", {}, key),
+    () => client.publishConfiguration("e1", key),
+  ];
+  for (const call of calls) {
+    await call();
+  }
+  assert.deepEqual(
+    requests.map((request) => request.headers.get("idempotency-key")),
+    calls.map(() => "01JTESTKEY"),
+  );
+
+  requests.length = 0;
+  await client.createEvent({});
+  await client.publishConfiguration("e1");
+  assert.deepEqual(
+    requests.map((request) => request.headers.get("idempotency-key")),
+    [null, null],
+  );
+});
+
+test("exposes Retry-After of an idempotent request that is still running", async () => {
+  const client = createOpenMeshTakClient({
+    baseUrl: "https://example.test",
+    fetch: async () =>
+      new Response(
+        JSON.stringify({
+          type: "urn:openmeshtak:problem:idempotency-request-in-progress",
+          title: "Request in progress",
+          status: 409,
+          code: "IDEMPOTENCY_REQUEST_IN_PROGRESS",
+        }),
+        { status: 409, headers: { "content-type": "application/problem+json", "retry-after": "1" } },
+      ),
+  });
+
+  await assert.rejects(client.createEvent({}, { idempotencyKey: "k1" }), (error) => {
+    assert.equal(error.code, "IDEMPOTENCY_REQUEST_IN_PROGRESS");
+    assert.equal(error.retryAfterSeconds, 1);
+    return true;
+  });
+});
+
 test("paginate follows opaque cursors until the last page", async () => {
   const pages = {
     "": { items: [1, 2], page: { nextCursor: "next-1", hasMore: true } },
@@ -182,6 +239,7 @@ test("throws a predictable problem-details error without branching on message te
     assert.equal(error.status, 403);
     assert.equal(error.code, "ACCESS_DENIED");
     assert.equal(error.traceId, "01TESTTRACE");
+    assert.equal(error.retryAfterSeconds, undefined);
     return true;
   });
 });

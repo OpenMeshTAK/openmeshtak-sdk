@@ -63,6 +63,22 @@ Each method maps to one API operation and throws `OpenMeshTakApiError` on a prob
 `createEventMemberAccount` and `createMemberClaim` return single-use links. Send them only to the
 person they are for and never log them.
 
+## Safe retries
+
+`createEvent`, `createEventRole`, `createEventGroup`, `createEventMember` and
+`publishConfiguration` accept an `Idempotency-Key`. Pass your own key and reuse it when you retry
+the same request after a timeout or network error; Core then returns the original response instead
+of creating a duplicate:
+
+```ts
+const idempotencyKey = crypto.randomUUID();
+const group = await client.createEventGroup(eventId, { name: "Alpha", slug: "alpha" }, { idempotencyKey });
+```
+
+The SDK never generates a key or retries by itself. A retry while the first request still runs
+fails with `IDEMPOTENCY_REQUEST_IN_PROGRESS`; wait `error.retryAfterSeconds` and try again. Reusing a
+key for a different request fails with `IDEMPOTENCY_KEY_REUSED`.
+
 List methods return one page. `paginate` walks through all of them:
 
 ```ts

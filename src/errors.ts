@@ -16,6 +16,12 @@ function isProblemDetails(value: unknown): value is ProblemDetails {
   );
 }
 
+// Core sends delay-seconds; an HTTP date or anything else is ignored rather than guessed.
+function parseRetryAfter(response: Response): number | undefined {
+  const value = response.headers.get("Retry-After");
+  return value !== null && /^\d+$/.test(value) ? Number(value) : undefined;
+}
+
 /** A safe RFC 9457 problem returned by OpenMeshTak Core. */
 export class OpenMeshTakApiError extends Error {
   readonly status: number;
@@ -23,6 +29,8 @@ export class OpenMeshTakApiError extends Error {
   readonly type: string | undefined;
   readonly code: string | undefined;
   readonly traceId: string | undefined;
+  /** Seconds to wait before retrying, when Core sent `Retry-After` (for example `429`). */
+  readonly retryAfterSeconds: number | undefined;
 
   constructor(response: Response, body: unknown) {
     const problem = isProblemDetails(body) ? body : undefined;
@@ -33,5 +41,6 @@ export class OpenMeshTakApiError extends Error {
     this.type = problem?.type;
     this.code = problem?.code;
     this.traceId = problem?.traceId;
+    this.retryAfterSeconds = parseRetryAfter(response);
   }
 }

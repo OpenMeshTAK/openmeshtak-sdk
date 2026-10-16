@@ -51,6 +51,17 @@ export interface OpenMeshTakClientOptions {
   fetch?: typeof globalThis.fetch;
 }
 
+/** Options for POST operations that Core makes safe to retry. */
+export interface IdempotentRequestOptions {
+  /**
+   * Opaque key of 1 to 255 visible ASCII characters, for example `crypto.randomUUID()`. Send the
+   * same key with the same request when retrying after a network error or timeout: Core then
+   * returns the original response instead of doing the work twice. Core keeps the result for
+   * 24 hours. The SDK never generates or retries on its own.
+   */
+  idempotencyKey?: string;
+}
+
 interface ApiResult<T> {
   data?: T;
   error?: unknown;
@@ -85,6 +96,10 @@ async function resolveApiKey(provider: ApiKeyProvider): Promise<string> {
     throw new TypeError("The API key provider returned an invalid OpenMeshTak API key.");
   }
   return value;
+}
+
+function idempotencyHeader(options: IdempotentRequestOptions): { "Idempotency-Key"?: string } {
+  return options.idempotencyKey === undefined ? {} : { "Idempotency-Key": options.idempotencyKey };
 }
 
 async function unwrap<T>(call: Promise<ApiResult<T>>): Promise<T> {
@@ -138,8 +153,8 @@ export class OpenMeshTakClient {
     return unwrap(this.#api.GET("/events", { params: { query: options } }));
   }
 
-  createEvent(body: CreateEventRequest): Promise<Event> {
-    return unwrap(this.#api.POST("/events", { body }));
+  createEvent(body: CreateEventRequest, options: IdempotentRequestOptions = {}): Promise<Event> {
+    return unwrap(this.#api.POST("/events", { params: { header: idempotencyHeader(options) }, body }));
   }
 
   getEvent(eventId: string): Promise<Event> {
@@ -169,8 +184,17 @@ export class OpenMeshTakClient {
     return unwrap(this.#api.GET("/events/{eventId}/roles", { params: { path: { eventId }, query: options } }));
   }
 
-  createEventRole(eventId: string, body: CreateEventRoleRequest): Promise<EventRole> {
-    return unwrap(this.#api.POST("/events/{eventId}/roles", { params: { path: { eventId } }, body }));
+  createEventRole(
+    eventId: string,
+    body: CreateEventRoleRequest,
+    options: IdempotentRequestOptions = {},
+  ): Promise<EventRole> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/roles", {
+        params: { path: { eventId }, header: idempotencyHeader(options) },
+        body,
+      }),
+    );
   }
 
   getEventRole(eventId: string, roleId: string): Promise<EventRole> {
@@ -195,8 +219,17 @@ export class OpenMeshTakClient {
     return unwrap(this.#api.GET("/events/{eventId}/groups", { params: { path: { eventId }, query: options } }));
   }
 
-  createEventGroup(eventId: string, body: CreateEventGroupRequest): Promise<EventGroup> {
-    return unwrap(this.#api.POST("/events/{eventId}/groups", { params: { path: { eventId } }, body }));
+  createEventGroup(
+    eventId: string,
+    body: CreateEventGroupRequest,
+    options: IdempotentRequestOptions = {},
+  ): Promise<EventGroup> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/groups", {
+        params: { path: { eventId }, header: idempotencyHeader(options) },
+        body,
+      }),
+    );
   }
 
   getEventGroup(eventId: string, groupId: string): Promise<EventGroup> {
@@ -224,8 +257,17 @@ export class OpenMeshTakClient {
   }
 
   /** Adds an existing OpenMeshTak user. Members from external systems use `upsertExternalMember`. */
-  createEventMember(eventId: string, body: CreateEventMemberRequest): Promise<EventMember> {
-    return unwrap(this.#api.POST("/events/{eventId}/members", { params: { path: { eventId } }, body }));
+  createEventMember(
+    eventId: string,
+    body: CreateEventMemberRequest,
+    options: IdempotentRequestOptions = {},
+  ): Promise<EventMember> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/members", {
+        params: { path: { eventId }, header: idempotencyHeader(options) },
+        body,
+      }),
+    );
   }
 
   /**
@@ -338,8 +380,12 @@ export class OpenMeshTakClient {
   }
 
   /** Publishes the current configuration of an active event; `created` is false when unchanged. */
-  publishConfiguration(eventId: string): Promise<PublishConfigurationResult> {
-    return unwrap(this.#api.POST("/events/{eventId}/configuration-revisions", { params: { path: { eventId } } }));
+  publishConfiguration(eventId: string, options: IdempotentRequestOptions = {}): Promise<PublishConfigurationResult> {
+    return unwrap(
+      this.#api.POST("/events/{eventId}/configuration-revisions", {
+        params: { path: { eventId }, header: idempotencyHeader(options) },
+      }),
+    );
   }
 
   getConfigurationRevision(eventId: string, revisionId: string): Promise<ConfigurationRevision> {
