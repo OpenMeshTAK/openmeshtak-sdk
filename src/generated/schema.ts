@@ -1514,6 +1514,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/{eventId}/meshtastic-nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Lists the nodes the event's HQs heard or an operator bound, oldest first, each with its binding
+         *     or, when unbound, a suggested member whose provisioned short name and callsign match.
+         */
+        get: operations["ListMeshtasticNodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/meshtastic-nodes/{nodeNum}/binding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * @description Binds the node to a member, confirming a suggestion or changing the binding; works before the
+         *     node was heard. A member has at most one node. Already recorded positions are not rewritten.
+         */
+        put: operations["BindMeshtasticNode"];
+        post?: never;
+        /** @description Removes the node's binding; its later positions show as unknown again. */
+        delete: operations["UnbindMeshtasticNode"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/mesh-observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Accepts up to 200 decoded `POSITION_APP` and `NODEINFO_APP` observations. Every observation
+         *     gets a final result in request order, so the HQ can delete the whole batch from its outbox:
+         *     packets already received (by retry or another HQ) answer `duplicate`, unusable ones
+         *     `rejected` with a code. Accepted positions appear in the event's live view and, when the event
+         *     records, in its history; they are never sent to TAK apps.
+         */
+        post: operations["UploadMeshObservations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{eventId}/members/{memberId}/data-packages": {
         parameters: {
             query?: never;
@@ -2758,6 +2822,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The audit log, newest first. `eventId` keeps one event's entries; scope `instance` keeps the
+         *     entries that belong to no event. Requires instance-wide `audit.read`.
+         */
+        get: operations["ListAuditEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The event's audit entries, newest first. Requires `audit.read` for the event. */
+        get: operations["ListEventAuditEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api-clients": {
         parameters: {
             query?: never;
@@ -2973,7 +3074,7 @@ export interface components {
             token: string;
         };
         /** @enum {string} */
-        Permission: "users.read" | "users.create" | "users.edit" | "users.set-email" | "users.disable" | "users.sign-out" | "users.password-reset" | "users.setup-links" | "registration.manage" | "user-groups.read" | "user-groups.manage" | "user-group-members.manage" | "events.read" | "events.manage" | "events.reactivate" | "configuration.publish" | "event-groups.manage" | "event-roles.manage" | "tak-settings.manage" | "tak-groups.manage" | "meshtastic-settings.manage" | "meshtastic-channels.manage" | "presets.read" | "presets.manage" | "members.read" | "members.manage" | "members.sync" | "member-accounts.create" | "event-accounts.manage" | "member-claims.create" | "channel-keys.reveal" | "data-packages.read" | "data-packages.edit" | "data-packages.publish" | "missions.read" | "missions.edit" | "missions.publish" | "offline-snapshots.prepare" | "artifacts.generate" | "artifacts.download" | "member-artifacts.download" | "tak-traffic.view" | "tak-traffic.history" | "tak-traffic.export" | "tak-traffic.delete" | "tak-traffic.recording" | "api-clients.manage" | "tak-server.manage" | "tak-server.admin-access" | "email.manage" | "settings.manage" | "audit.read" | "server-logs.read";
+        Permission: "users.read" | "users.create" | "users.edit" | "users.set-email" | "users.disable" | "users.sign-out" | "users.password-reset" | "users.setup-links" | "registration.manage" | "user-groups.read" | "user-groups.manage" | "user-group-members.manage" | "events.read" | "events.manage" | "events.reactivate" | "configuration.publish" | "event-groups.manage" | "event-roles.manage" | "tak-settings.manage" | "tak-groups.manage" | "meshtastic-settings.manage" | "meshtastic-channels.manage" | "presets.read" | "presets.manage" | "members.read" | "members.manage" | "members.sync" | "member-accounts.create" | "event-accounts.manage" | "member-claims.create" | "channel-keys.reveal" | "data-packages.read" | "data-packages.edit" | "data-packages.publish" | "missions.read" | "missions.edit" | "missions.publish" | "offline-snapshots.prepare" | "artifacts.generate" | "artifacts.download" | "member-artifacts.download" | "tak-traffic.view" | "tak-traffic.history" | "tak-traffic.export" | "tak-traffic.delete" | "tak-traffic.recording" | "mesh-uplink.send" | "mesh-bindings.manage" | "api-clients.manage" | "tak-server.manage" | "tak-server.admin-access" | "email.manage" | "settings.manage" | "audit.read" | "server-logs.read";
         PermissionGrantDto: {
             permission: components["schemas"]["Permission"];
             /** @description Event the grant is limited to, or `null` for an instance-wide grant. */
@@ -3056,6 +3157,15 @@ export interface components {
             eventGroupId: components["schemas"]["Uuid"] | null;
             eventGroupName: string | null;
         };
+        /** @enum {string} */
+        TakTrackPointSource: "tak" | "mesh";
+        /** @description The Meshtastic node and HQ behind an uplinked position. */
+        TakTrackPointMeshDto: {
+            /** @description Node number as Meshtastic shows it, e.g. `!a1b2c3d4`. */
+            nodeId: string;
+            hqId: components["schemas"]["Uuid"];
+            hqName: string | null;
+        };
         /** @description One recorded position on a track. */
         TakTrackPointDto: {
             /**
@@ -3074,8 +3184,14 @@ export interface components {
             ce: number | null;
             /** @description Reached Core more than a minute after its own time, for example relayed over a mesh. */
             delayed: boolean;
-            /** @description A large circular error or a human estimate; never connected to other positions. */
+            /** @description A circular error of 100 m or more; never connected to other positions. */
             approximate: boolean;
+            /** @description The sender marked the position as estimated (CoT `how` `h-e`); drawn as a dashed line. */
+            estimated: boolean;
+            /** @description `tak` from a connected TAK app, `mesh` from a Meshtastic node an HQ uplinked. */
+            source: components["schemas"]["TakTrackPointSource"];
+            /** @description Present on mesh positions only. */
+            mesh?: components["schemas"]["TakTrackPointMeshDto"];
         };
         /** @description The recorded movement of one CoT UID, such as a member's device or a marker. */
         TakTrackDto: {
@@ -3085,7 +3201,11 @@ export interface components {
             callsign: string | null;
             /** @description At least one position was the app's own beacon rather than a marker it placed. */
             selfReported: boolean;
-            sender: components["schemas"]["TakTrackSenderDto"];
+            /**
+             * @description Who sent the newest position: the TAK app's user or the member a mesh node is bound to. Null
+             *     for a mesh node no member is bound to (UID `meshtastic-<node>`).
+             */
+            sender: components["schemas"]["TakTrackSenderDto"] | null;
             /** Format: double */
             pointCount: number;
             /**
@@ -3262,6 +3382,71 @@ export interface components {
             /** Format: date-time */
             lastSeenAt: string;
         };
+        /**
+         * @description Where an item reached Core: from a connected TAK app or from a Meshtastic node through an HQ uplink.
+         * @enum {string}
+         */
+        LiveTakItemSource: "tak" | "mesh";
+        /**
+         * @description The TAK app that sent an item: for a position the app itself, for a marker the app that placed
+         *     it. The connection may have ended since; Core keeps current items after their app disconnects.
+         *     For a mesh position of a bound node it is the bound member, without a connection.
+         */
+        LiveTakSenderDto: {
+            /**
+             * @description The sending connection; matches a `LiveTakConnectionDto.id` while that app is connected. Null
+             *     for mesh positions, which reach Core through an HQ uplink instead of a TAK connection.
+             */
+            connectionId: components["schemas"]["Uuid"] | null;
+            userId: components["schemas"]["Uuid"];
+            userDisplayName: string;
+            /** @description The sender's group in this event, or null when they are not a member, e.g. an administrator. */
+            eventGroup: components["schemas"]["LiveTakAssignmentDto"] | null;
+        };
+        /** @description The HQ that uploaded a mesh position, as it named itself. */
+        LiveMeshHqDto: {
+            id: components["schemas"]["Uuid"];
+            name: string | null;
+        };
+        /** @description Meshtastic channel the packet arrived on; only index and name, never key material. */
+        MeshChannelDto: {
+            /** Format: int32 */
+            index: number;
+            name?: string;
+        };
+        /** @description Provenance of an uplinked mesh position. */
+        LiveMeshDetailsDto: {
+            /**
+             * Format: double
+             * @description Unsigned 32-bit Meshtastic node number.
+             */
+            nodeNum: number;
+            /** @description The node number as Meshtastic shows it, e.g. `!a1b2c3d4`. */
+            nodeId: string;
+            /** @description Names the node announced; untrusted display text. */
+            shortName: string | null;
+            longName: string | null;
+            /** @description The member the node is bound to; null shows the node as unknown. */
+            memberId: components["schemas"]["Uuid"] | null;
+            hq: components["schemas"]["LiveMeshHqDto"];
+            /**
+             * Format: date-time
+             * @description When the HQ radio received the packet.
+             */
+            receivedAt: string;
+            /**
+             * Format: double
+             * @description Battery level in percent; 101 means powered.
+             */
+            batteryLevel: number | null;
+            /** Format: double */
+            snr: number | null;
+            /** Format: double */
+            rssi: number | null;
+            /** Format: double */
+            hopsAway: number | null;
+            channel: components["schemas"]["MeshChannelDto"] | null;
+        };
         /** @description The newest state of one CoT item, such as a member's position or a marker they placed. */
         LiveTakItemDto: {
             uid: string;
@@ -3286,6 +3471,14 @@ export interface components {
             time: string;
             /** Format: date-time */
             stale: string;
+            source: components["schemas"]["LiveTakItemSource"];
+            /**
+             * @description The app or member that sent the item. Null only for mesh positions of nodes no member is bound
+             *     to; those carry a node-derived UID such as `meshtastic-a1b2c3d4` and the CoT type `a-u-G`.
+             */
+            placedBy: components["schemas"]["LiveTakSenderDto"] | null;
+            /** @description Present on mesh positions only. */
+            mesh?: components["schemas"]["LiveMeshDetailsDto"];
         };
         /** @description Current TAK traffic of one event, held in memory only; nothing of it is stored. */
         LiveTakTrafficDto: {
@@ -5051,6 +5244,183 @@ export interface components {
             /** @description Base64 key exactly as Meshtastic clients expect it. */
             psk: string;
         };
+        /** @description The event member a node is bound to or suggested for, with the names the radio was provisioned with. */
+        MeshtasticNodeMemberDto: {
+            memberId: components["schemas"]["Uuid"];
+            userId: components["schemas"]["Uuid"];
+            displayName: string;
+            callsign: string;
+            /** @description The member's provisioned Meshtastic short name, e.g. `B1`; null while the group has no prefix. */
+            shortName: string | null;
+        };
+        MeshtasticNodeBindingDto: {
+            member: components["schemas"]["MeshtasticNodeMemberDto"];
+            /** Format: date-time */
+            boundAt: string;
+        };
+        /**
+         * @description A Meshtastic node of the event: heard by an HQ uplink, or bound by an operator in advance. A bound
+         *     node's positions join the member's track under the member's CoT UID; unbound nodes appear as
+         *     unknown under `meshtastic-<node>`.
+         */
+        MeshtasticNodeDto: {
+            /**
+             * Format: double
+             * @description Unsigned 32-bit node number.
+             */
+            nodeNum: number;
+            /** @description As Meshtastic shows it, e.g. `!a1b2c3d4`. */
+            nodeId: string;
+            /** @description Names the node announced; untrusted display text. */
+            shortName: string | null;
+            longName: string | null;
+            /**
+             * Format: date-time
+             * @description HQ receive time of the newest packet from the node; null when only bound in advance.
+             */
+            lastHeardAt: string | null;
+            /** Format: date-time */
+            lastPositionAt: string | null;
+            binding: components["schemas"]["MeshtasticNodeBindingDto"] | null;
+            /**
+             * @description For an unbound node whose short and long name equal exactly one unbound member's provisioned
+             *     short name and callsign (ignoring case and surrounding spaces): that member. An operator
+             *     confirms it by binding; Core never binds on its own.
+             */
+            suggestion: components["schemas"]["MeshtasticNodeMemberDto"] | null;
+            /**
+             * Format: double
+             * @description Optimistic-concurrency version; send it back unchanged when binding.
+             */
+            version: number;
+        };
+        MeshtasticNodePage: {
+            items: components["schemas"]["MeshtasticNodeDto"][];
+            page: components["schemas"]["PageInfo"];
+        };
+        BindMeshtasticNodeRequest: {
+            memberId: components["schemas"]["Uuid"];
+            /**
+             * Format: int32
+             * @description Version the client last read; 0 for a node Core has not stored yet (binding in advance).
+             */
+            version: number;
+        };
+        /**
+         * @description What Core did with one observation. Every status is final: the HQ removes the observation from
+         *     its outbox whatever the status, and a retry of the same packet answers `duplicate`.
+         *     - `accepted`: shown in the live view and, when the event records, recorded.
+         *     - `duplicate`: this packet was already received, from this or another HQ.
+         *     - `tak-preferred`: the bound member's TAK app sent a position within the event's position interval.
+         *     - `rejected`: unusable; `code` says why.
+         * @enum {string}
+         */
+        MeshObservationStatus: "accepted" | "duplicate" | "tak-preferred" | "rejected";
+        MeshObservationResultDto: {
+            status: components["schemas"]["MeshObservationStatus"];
+            /**
+             * @description Present for `rejected`: `INVALID_TIME`, `RECEIVED_IN_FUTURE`, `TOO_OLD` (older than the
+             *     seven-day deduplication window), `NO_POSITION` or `NO_FIX` (0,0).
+             */
+            code?: string;
+        };
+        MeshObservationBatchResultDto: {
+            /** Format: double */
+            accepted: number;
+            /** Format: double */
+            duplicates: number;
+            /** Format: double */
+            takPreferred: number;
+            /** Format: double */
+            rejected: number;
+            /**
+             * Format: double
+             * @description Positions written to the event's recording; 0 while the event does not record.
+             */
+            recorded: number;
+            /** @description One result per observation, in request order. */
+            results: components["schemas"]["MeshObservationResultDto"][];
+        };
+        /**
+         * @description `position` for a decoded `POSITION_APP` packet, `nodeinfo` for a decoded `NODEINFO_APP` packet.
+         * @enum {string}
+         */
+        MeshObservationKind: "position" | "nodeinfo";
+        /** @description A decoded Meshtastic position, normalized by the HQ. */
+        MeshPositionDto: {
+            /**
+             * Format: double
+             * @description Degrees, WGS 84.
+             */
+            lat: number;
+            /**
+             * Format: double
+             * @description Degrees, WGS 84.
+             */
+            lon: number;
+            /**
+             * Format: int32
+             * @description Meshtastic `precision_bits`; fewer bits mean a deliberately coarser position. 32, 0 or absent
+             *     mean full precision.
+             */
+            precisionBits?: number;
+            /**
+             * Format: double
+             * @description Ground speed in metres per second.
+             */
+            groundSpeed?: number;
+            /**
+             * Format: double
+             * @description Direction of travel in degrees clockwise from true north.
+             */
+            groundTrack?: number;
+        };
+        /**
+         * @description One packet the HQ radio received, decoded and normalized. Node database entries from the radio
+         *     are not observations: only packets heard live, with their packet ID, may be sent.
+         */
+        MeshObservationDto: {
+            kind: components["schemas"]["MeshObservationKind"];
+            /**
+             * Format: int32
+             * @description The sending node's number (`from`).
+             */
+            nodeNum: number;
+            /**
+             * Format: int32
+             * @description The Meshtastic packet ID; with `nodeNum` it identifies the packet across retries and HQs.
+             */
+            packetId: number;
+            /** @description When the HQ radio received the packet, RFC 3339 with offset. Authoritative for ordering. */
+            receivedAt: string;
+            /** @description The position time the node reported, if any; used only when plausible. */
+            packetTime?: string;
+            /** @description Required for `position`, ignored for `nodeinfo`. */
+            position?: components["schemas"]["MeshPositionDto"];
+            shortName?: string;
+            longName?: string;
+            /**
+             * Format: int32
+             * @description Percent; 101 means powered.
+             */
+            batteryLevel?: number;
+            /** Format: double */
+            snr?: number;
+            /** Format: int32 */
+            rssi?: number;
+            /** Format: int32 */
+            hopsAway?: number;
+            /** @description Channel index and name only; never key material. */
+            channel?: components["schemas"]["MeshChannelDto"];
+        };
+        MeshObservationBatchRequest: {
+            /** @description A random UUID the HQ keeps for itself, so viewers can tell HQs apart. */
+            hqId: components["schemas"]["Uuid"];
+            /** @description Display name of the HQ, e.g. `HQ North`. */
+            hqName?: string;
+            /** @description Observations in the order the HQ received them. */
+            observations: components["schemas"]["MeshObservationDto"][];
+        };
         /** @description A published Data Package a member receives, at its newest revision. */
         MemberDataPackageDto: {
             id: components["schemas"]["Uuid"];
@@ -6341,6 +6711,46 @@ export interface components {
             name?: string;
             packages: components["schemas"]["CombinedExportSelection"][];
         };
+        /** @enum {string} */
+        AuditActorType: "user" | "api_client" | "anonymous" | "system";
+        AuditActorDto: {
+            type: components["schemas"]["AuditActorType"];
+            id: string | null;
+            /** @description Display name of the user or API client; null when it no longer exists or there is none. */
+            name: string | null;
+        };
+        /** @enum {string} */
+        AuditResult: "success" | "failure";
+        AuditEventDto: {
+            id: components["schemas"]["Uuid"];
+            /** @description ISO 8601 time the action happened. */
+            occurredAt: string;
+            actor: components["schemas"]["AuditActorDto"];
+            /** @description Dotted action name such as `event.updated` or `tak-server.client-certificate-issued`. */
+            action: string;
+            targetType: string;
+            targetId: string | null;
+            result: components["schemas"]["AuditResult"];
+            /** @description Event the action belongs to; null for installation-wide actions. */
+            eventId: components["schemas"]["Uuid"] | null;
+            /** @description Current name of that event. */
+            eventName: string | null;
+            /** @description Correlates the entry with the server log lines of the same request. */
+            traceId: string | null;
+            /** @description Safe identifiers and state names recorded with the action. Never contains secrets. */
+            metadata: {
+                [key: string]: unknown;
+            } | null;
+        };
+        AuditEventPage: {
+            items: components["schemas"]["AuditEventDto"][];
+            page: components["schemas"]["PageInfo"];
+        };
+        /**
+         * @description `instance`: only entries that belong to no event, such as user or TAK server administration.
+         * @enum {string}
+         */
+        AuditScope: "all" | "instance";
         /** @enum {string} */
         ApiClientStatus: "active" | "disabled";
         ApiClientDto: {
@@ -11980,6 +12390,278 @@ export interface operations {
             };
         };
     };
+    ListMeshtasticNodes: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Meshtastic nodes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeshtasticNodePage"];
+                };
+            };
+            /** @description Invalid cursor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    BindMeshtasticNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                /** @description Unsigned 32-bit node number. */
+                nodeNum: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BindMeshtasticNodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Node bound */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeshtasticNodeDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Version conflict, member already bound or event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UnbindMeshtasticNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+                /** @description Unsigned 32-bit node number. */
+                nodeNum: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Binding removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Event archived */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UploadMeshObservations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeshObservationBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Batch processed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeshObservationBatchResultDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Event not active or Meshtastic off */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many uploads */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     ListMemberDataPackages: {
         parameters: {
             query?: never;
@@ -17469,6 +18151,143 @@ export interface operations {
             };
             /** @description Nothing published to export */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListAuditEvents: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+                /** @description Part of the action, target type or target ID. */
+                search?: string;
+                result?: components["schemas"]["AuditResult"];
+                eventId?: components["schemas"]["Uuid"];
+                scope?: components["schemas"]["AuditScope"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Audit entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEventPage"];
+                };
+            };
+            /** @description Invalid cursor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListEventAuditEvents: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+                /** @description Part of the action, target type or target ID. */
+                search?: string;
+                result?: components["schemas"]["AuditResult"];
+            };
+            header?: never;
+            path: {
+                eventId: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Audit entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEventPage"];
+                };
+            };
+            /** @description Invalid cursor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

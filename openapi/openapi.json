@@ -394,6 +394,8 @@
 					"tak-traffic.export",
 					"tak-traffic.delete",
 					"tak-traffic.recording",
+					"mesh-uplink.send",
+					"mesh-bindings.manage",
 					"api-clients.manage",
 					"tak-server.manage",
 					"tak-server.admin-access",
@@ -651,6 +653,36 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakTrackPointSource": {
+				"type": "string",
+				"enum": [
+					"tak",
+					"mesh"
+				]
+			},
+			"TakTrackPointMeshDto": {
+				"description": "The Meshtastic node and HQ behind an uplinked position.",
+				"properties": {
+					"nodeId": {
+						"type": "string",
+						"description": "Node number as Meshtastic shows it, e.g. `!a1b2c3d4`."
+					},
+					"hqId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"hqName": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"nodeId",
+					"hqId",
+					"hqName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TakTrackPointDto": {
 				"description": "One recorded position on a track.",
 				"properties": {
@@ -679,7 +711,19 @@
 					},
 					"approximate": {
 						"type": "boolean",
-						"description": "A large circular error or a human estimate; never connected to other positions."
+						"description": "A circular error of 100 m or more; never connected to other positions."
+					},
+					"estimated": {
+						"type": "boolean",
+						"description": "The sender marked the position as estimated (CoT `how` `h-e`); drawn as a dashed line."
+					},
+					"source": {
+						"$ref": "#/components/schemas/TakTrackPointSource",
+						"description": "`tak` from a connected TAK app, `mesh` from a Meshtastic node an HQ uplinked."
+					},
+					"mesh": {
+						"$ref": "#/components/schemas/TakTrackPointMeshDto",
+						"description": "Present on mesh positions only."
 					}
 				},
 				"required": [
@@ -688,7 +732,9 @@
 					"lon",
 					"ce",
 					"delayed",
-					"approximate"
+					"approximate",
+					"estimated",
+					"source"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -712,7 +758,13 @@
 						"description": "At least one position was the app's own beacon rather than a marker it placed."
 					},
 					"sender": {
-						"$ref": "#/components/schemas/TakTrackSenderDto"
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakTrackSenderDto"
+							}
+						],
+						"nullable": true,
+						"description": "Who sent the newest position: the TAK app's user or the member a mesh node is bound to. Null\nfor a mesh node no member is bound to (UID `meshtastic-<node>`)."
 					},
 					"pointCount": {
 						"type": "number",
@@ -1173,6 +1225,174 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"LiveTakItemSource": {
+				"type": "string",
+				"enum": [
+					"tak",
+					"mesh"
+				],
+				"description": "Where an item reached Core: from a connected TAK app or from a Meshtastic node through an HQ uplink."
+			},
+			"LiveTakSenderDto": {
+				"description": "The TAK app that sent an item: for a position the app itself, for a marker the app that placed\nit. The connection may have ended since; Core keeps current items after their app disconnects.\nFor a mesh position of a bound node it is the bound member, without a connection.",
+				"properties": {
+					"connectionId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "The sending connection; matches a `LiveTakConnectionDto.id` while that app is connected. Null\nfor mesh positions, which reach Core through an HQ uplink instead of a TAK connection."
+					},
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userDisplayName": {
+						"type": "string"
+					},
+					"eventGroup": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/LiveTakAssignmentDto"
+							}
+						],
+						"nullable": true,
+						"description": "The sender's group in this event, or null when they are not a member, e.g. an administrator."
+					}
+				},
+				"required": [
+					"connectionId",
+					"userId",
+					"userDisplayName",
+					"eventGroup"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LiveMeshHqDto": {
+				"description": "The HQ that uploaded a mesh position, as it named itself.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshChannelDto": {
+				"description": "Meshtastic channel the packet arrived on; only index and name, never key material.",
+				"properties": {
+					"index": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 7
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 12
+					}
+				},
+				"required": [
+					"index"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LiveMeshDetailsDto": {
+				"description": "Provenance of an uplinked mesh position.",
+				"properties": {
+					"nodeNum": {
+						"type": "number",
+						"format": "double",
+						"description": "Unsigned 32-bit Meshtastic node number."
+					},
+					"nodeId": {
+						"type": "string",
+						"description": "The node number as Meshtastic shows it, e.g. `!a1b2c3d4`."
+					},
+					"shortName": {
+						"type": "string",
+						"nullable": true,
+						"description": "Names the node announced; untrusted display text."
+					},
+					"longName": {
+						"type": "string",
+						"nullable": true
+					},
+					"memberId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "The member the node is bound to; null shows the node as unknown."
+					},
+					"hq": {
+						"$ref": "#/components/schemas/LiveMeshHqDto"
+					},
+					"receivedAt": {
+						"type": "string",
+						"description": "When the HQ radio received the packet.",
+						"format": "date-time"
+					},
+					"batteryLevel": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Battery level in percent; 101 means powered."
+					},
+					"snr": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"rssi": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"hopsAway": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"channel": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/MeshChannelDto"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"nodeNum",
+					"nodeId",
+					"shortName",
+					"longName",
+					"memberId",
+					"hq",
+					"receivedAt",
+					"batteryLevel",
+					"snr",
+					"rssi",
+					"hopsAway",
+					"channel"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"LiveTakItemDto": {
 				"description": "The newest state of one CoT item, such as a member's position or a marker they placed.",
 				"properties": {
@@ -1214,6 +1434,22 @@
 					"stale": {
 						"type": "string",
 						"format": "date-time"
+					},
+					"source": {
+						"$ref": "#/components/schemas/LiveTakItemSource"
+					},
+					"placedBy": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/LiveTakSenderDto"
+							}
+						],
+						"nullable": true,
+						"description": "The app or member that sent the item. Null only for mesh positions of nodes no member is bound\nto; those carry a node-derived UID such as `meshtastic-a1b2c3d4` and the CoT type `a-u-G`."
+					},
+					"mesh": {
+						"$ref": "#/components/schemas/LiveMeshDetailsDto",
+						"description": "Present on mesh positions only."
 					}
 				},
 				"required": [
@@ -1225,7 +1461,9 @@
 					"course",
 					"speed",
 					"time",
-					"stale"
+					"stale",
+					"source",
+					"placedBy"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -6385,6 +6623,392 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"MeshtasticNodeMemberDto": {
+				"description": "The event member a node is bound to or suggested for, with the names the radio was provisioned with.",
+				"properties": {
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"displayName": {
+						"type": "string"
+					},
+					"callsign": {
+						"type": "string"
+					},
+					"shortName": {
+						"type": "string",
+						"nullable": true,
+						"description": "The member's provisioned Meshtastic short name, e.g. `B1`; null while the group has no prefix."
+					}
+				},
+				"required": [
+					"memberId",
+					"userId",
+					"displayName",
+					"callsign",
+					"shortName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticNodeBindingDto": {
+				"properties": {
+					"member": {
+						"$ref": "#/components/schemas/MeshtasticNodeMemberDto"
+					},
+					"boundAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"member",
+					"boundAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticNodeDto": {
+				"description": "A Meshtastic node of the event: heard by an HQ uplink, or bound by an operator in advance. A bound\nnode's positions join the member's track under the member's CoT UID; unbound nodes appear as\nunknown under `meshtastic-<node>`.",
+				"properties": {
+					"nodeNum": {
+						"type": "number",
+						"format": "double",
+						"description": "Unsigned 32-bit node number."
+					},
+					"nodeId": {
+						"type": "string",
+						"description": "As Meshtastic shows it, e.g. `!a1b2c3d4`."
+					},
+					"shortName": {
+						"type": "string",
+						"nullable": true,
+						"description": "Names the node announced; untrusted display text."
+					},
+					"longName": {
+						"type": "string",
+						"nullable": true
+					},
+					"lastHeardAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "HQ receive time of the newest packet from the node; null when only bound in advance.",
+						"format": "date-time"
+					},
+					"lastPositionAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"binding": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/MeshtasticNodeBindingDto"
+							}
+						],
+						"nullable": true
+					},
+					"suggestion": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/MeshtasticNodeMemberDto"
+							}
+						],
+						"nullable": true,
+						"description": "For an unbound node whose short and long name equal exactly one unbound member's provisioned\nshort name and callsign (ignoring case and surrounding spaces): that member. An operator\nconfirms it by binding; Core never binds on its own."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged when binding."
+					}
+				},
+				"required": [
+					"nodeNum",
+					"nodeId",
+					"shortName",
+					"longName",
+					"lastHeardAt",
+					"lastPositionAt",
+					"binding",
+					"suggestion",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticNodePage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/MeshtasticNodeDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BindMeshtasticNodeRequest": {
+				"properties": {
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read; 0 for a node Core has not stored yet (binding in advance).",
+						"minimum": 0
+					}
+				},
+				"required": [
+					"memberId",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationStatus": {
+				"type": "string",
+				"enum": [
+					"accepted",
+					"duplicate",
+					"tak-preferred",
+					"rejected"
+				],
+				"description": "What Core did with one observation. Every status is final: the HQ removes the observation from\nits outbox whatever the status, and a retry of the same packet answers `duplicate`.\n- `accepted`: shown in the live view and, when the event records, recorded.\n- `duplicate`: this packet was already received, from this or another HQ.\n- `tak-preferred`: the bound member's TAK app sent a position within the event's position interval.\n- `rejected`: unusable; `code` says why."
+			},
+			"MeshObservationResultDto": {
+				"properties": {
+					"status": {
+						"$ref": "#/components/schemas/MeshObservationStatus"
+					},
+					"code": {
+						"type": "string",
+						"description": "Present for `rejected`: `INVALID_TIME`, `RECEIVED_IN_FUTURE`, `TOO_OLD` (older than the\nseven-day deduplication window), `NO_POSITION` or `NO_FIX` (0,0)."
+					}
+				},
+				"required": [
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationBatchResultDto": {
+				"properties": {
+					"accepted": {
+						"type": "number",
+						"format": "double"
+					},
+					"duplicates": {
+						"type": "number",
+						"format": "double"
+					},
+					"takPreferred": {
+						"type": "number",
+						"format": "double"
+					},
+					"rejected": {
+						"type": "number",
+						"format": "double"
+					},
+					"recorded": {
+						"type": "number",
+						"format": "double",
+						"description": "Positions written to the event's recording; 0 while the event does not record."
+					},
+					"results": {
+						"items": {
+							"$ref": "#/components/schemas/MeshObservationResultDto"
+						},
+						"type": "array",
+						"description": "One result per observation, in request order."
+					}
+				},
+				"required": [
+					"accepted",
+					"duplicates",
+					"takPreferred",
+					"rejected",
+					"recorded",
+					"results"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationKind": {
+				"type": "string",
+				"enum": [
+					"position",
+					"nodeinfo"
+				],
+				"description": "`position` for a decoded `POSITION_APP` packet, `nodeinfo` for a decoded `NODEINFO_APP` packet."
+			},
+			"MeshPositionDto": {
+				"description": "A decoded Meshtastic position, normalized by the HQ.",
+				"properties": {
+					"lat": {
+						"type": "number",
+						"format": "double",
+						"description": "Degrees, WGS 84.",
+						"minimum": -90,
+						"maximum": 90
+					},
+					"lon": {
+						"type": "number",
+						"format": "double",
+						"description": "Degrees, WGS 84.",
+						"minimum": -180,
+						"maximum": 180
+					},
+					"precisionBits": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Meshtastic `precision_bits`; fewer bits mean a deliberately coarser position. 32, 0 or absent\nmean full precision.",
+						"minimum": 0,
+						"maximum": 32
+					},
+					"groundSpeed": {
+						"type": "number",
+						"format": "double",
+						"description": "Ground speed in metres per second.",
+						"minimum": 0,
+						"maximum": 1000
+					},
+					"groundTrack": {
+						"type": "number",
+						"format": "double",
+						"description": "Direction of travel in degrees clockwise from true north.",
+						"minimum": 0,
+						"maximum": 360
+					}
+				},
+				"required": [
+					"lat",
+					"lon"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationDto": {
+				"description": "One packet the HQ radio received, decoded and normalized. Node database entries from the radio\nare not observations: only packets heard live, with their packet ID, may be sent.",
+				"properties": {
+					"kind": {
+						"$ref": "#/components/schemas/MeshObservationKind"
+					},
+					"nodeNum": {
+						"type": "integer",
+						"format": "int32",
+						"description": "The sending node's number (`from`).",
+						"minimum": 1,
+						"maximum": 4294967294
+					},
+					"packetId": {
+						"type": "integer",
+						"format": "int32",
+						"description": "The Meshtastic packet ID; with `nodeNum` it identifies the packet across retries and HQs.",
+						"minimum": 1,
+						"maximum": 4294967295
+					},
+					"receivedAt": {
+						"type": "string",
+						"description": "When the HQ radio received the packet, RFC 3339 with offset. Authoritative for ordering.",
+						"maxLength": 40
+					},
+					"packetTime": {
+						"type": "string",
+						"description": "The position time the node reported, if any; used only when plausible.",
+						"maxLength": 40
+					},
+					"position": {
+						"$ref": "#/components/schemas/MeshPositionDto",
+						"description": "Required for `position`, ignored for `nodeinfo`."
+					},
+					"shortName": {
+						"type": "string",
+						"maxLength": 8
+					},
+					"longName": {
+						"type": "string",
+						"maxLength": 40
+					},
+					"batteryLevel": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Percent; 101 means powered.",
+						"minimum": 0,
+						"maximum": 101
+					},
+					"snr": {
+						"type": "number",
+						"format": "double",
+						"minimum": -50,
+						"maximum": 50
+					},
+					"rssi": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": -200,
+						"maximum": 0
+					},
+					"hopsAway": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 7
+					},
+					"channel": {
+						"$ref": "#/components/schemas/MeshChannelDto",
+						"description": "Channel index and name only; never key material."
+					}
+				},
+				"required": [
+					"kind",
+					"nodeNum",
+					"packetId",
+					"receivedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationBatchRequest": {
+				"properties": {
+					"hqId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "A random UUID the HQ keeps for itself, so viewers can tell HQs apart."
+					},
+					"hqName": {
+						"type": "string",
+						"description": "Display name of the HQ, e.g. `HQ North`.",
+						"maxLength": 60
+					},
+					"observations": {
+						"items": {
+							"$ref": "#/components/schemas/MeshObservationDto"
+						},
+						"type": "array",
+						"description": "Observations in the order the HQ received them.",
+						"minItems": 1,
+						"maxItems": 200
+					}
+				},
+				"required": [
+					"hqId",
+					"observations"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"MemberDataPackageDto": {
 				"description": "A published Data Package a member receives, at its newest revision.",
 				"properties": {
@@ -10304,6 +10928,141 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"AuditActorType": {
+				"type": "string",
+				"enum": [
+					"user",
+					"api_client",
+					"anonymous",
+					"system"
+				]
+			},
+			"AuditActorDto": {
+				"properties": {
+					"type": {
+						"$ref": "#/components/schemas/AuditActorType"
+					},
+					"id": {
+						"type": "string",
+						"nullable": true
+					},
+					"name": {
+						"type": "string",
+						"nullable": true,
+						"description": "Display name of the user or API client; null when it no longer exists or there is none."
+					}
+				},
+				"required": [
+					"type",
+					"id",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuditResult": {
+				"type": "string",
+				"enum": [
+					"success",
+					"failure"
+				]
+			},
+			"AuditEventDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"occurredAt": {
+						"type": "string",
+						"description": "ISO 8601 time the action happened."
+					},
+					"actor": {
+						"$ref": "#/components/schemas/AuditActorDto"
+					},
+					"action": {
+						"type": "string",
+						"description": "Dotted action name such as `event.updated` or `tak-server.client-certificate-issued`."
+					},
+					"targetType": {
+						"type": "string"
+					},
+					"targetId": {
+						"type": "string",
+						"nullable": true
+					},
+					"result": {
+						"$ref": "#/components/schemas/AuditResult"
+					},
+					"eventId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "Event the action belongs to; null for installation-wide actions."
+					},
+					"eventName": {
+						"type": "string",
+						"nullable": true,
+						"description": "Current name of that event."
+					},
+					"traceId": {
+						"type": "string",
+						"nullable": true,
+						"description": "Correlates the entry with the server log lines of the same request."
+					},
+					"metadata": {
+						"properties": {},
+						"additionalProperties": {},
+						"type": "object",
+						"nullable": true,
+						"description": "Safe identifiers and state names recorded with the action. Never contains secrets."
+					}
+				},
+				"required": [
+					"id",
+					"occurredAt",
+					"actor",
+					"action",
+					"targetType",
+					"targetId",
+					"result",
+					"eventId",
+					"eventName",
+					"traceId",
+					"metadata"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuditEventPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/AuditEventDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuditScope": {
+				"type": "string",
+				"enum": [
+					"all",
+					"instance"
+				],
+				"description": "`instance`: only entries that belong to no event, such as user or TAK server administration."
+			},
 			"ApiClientStatus": {
 				"type": "string",
 				"enum": [
@@ -10601,7 +11360,7 @@
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
-		"version": "0.3.4",
+		"version": "0.4.0",
 		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
 		"license": {
 			"name": "AGPL-3.0-only"
@@ -18375,6 +19134,406 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/meshtastic-nodes": {
+			"get": {
+				"operationId": "ListMeshtasticNodes",
+				"responses": {
+					"200": {
+						"description": "Meshtastic nodes",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticNodePage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the nodes the event's HQs heard or an operator bound, oldest first, each with its binding\nor, when unbound, a suggested member whose provisioned short name and callsign match.",
+				"tags": [
+					"Mesh uplink"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic-nodes/{nodeNum}/binding": {
+			"put": {
+				"operationId": "BindMeshtasticNode",
+				"responses": {
+					"200": {
+						"description": "Node bound",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticNodeDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, member already bound or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Binds the node to a member, confirming a suggestion or changing the binding; works before the\nnode was heard. A member has at most one node. Already recorded positions are not rewritten.",
+				"tags": [
+					"Mesh uplink"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Unsigned 32-bit node number.",
+						"in": "path",
+						"name": "nodeNum",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 4294967294
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BindMeshtasticNodeRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "UnbindMeshtasticNode",
+				"responses": {
+					"204": {
+						"description": "Binding removed"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Removes the node's binding; its later positions show as unknown again.",
+				"tags": [
+					"Mesh uplink"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Unsigned 32-bit node number.",
+						"in": "path",
+						"name": "nodeNum",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 4294967294
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/mesh-observations": {
+			"post": {
+				"operationId": "UploadMeshObservations",
+				"responses": {
+					"200": {
+						"description": "Batch processed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshObservationBatchResultDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active or Meshtastic off",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many uploads",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Accepts up to 200 decoded `POSITION_APP` and `NODEINFO_APP` observations. Every observation\ngets a final result in request order, so the HQ can delete the whole batch from its outbox:\npackets already received (by retry or another HQ) answer `duplicate`, unusable ones\n`rejected` with a code. Accepted positions appear in the event's live view and, when the event\nrecords, in its history; they are never sent to TAK apps.",
+				"tags": [
+					"Mesh uplink"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MeshObservationBatchRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/members/{memberId}/data-packages": {
@@ -26710,6 +27869,256 @@
 						}
 					}
 				}
+			}
+		},
+		"/audit-events": {
+			"get": {
+				"operationId": "ListAuditEvents",
+				"responses": {
+					"200": {
+						"description": "Audit entries",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuditEventPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The audit log, newest first. `eventId` keeps one event's entries; scope `instance` keeps the\nentries that belong to no event. Requires instance-wide `audit.read`.",
+				"tags": [
+					"Audit"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "Part of the action, target type or target ID.",
+						"in": "query",
+						"name": "search",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"maxLength": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "result",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/AuditResult"
+						}
+					},
+					{
+						"in": "query",
+						"name": "eventId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "scope",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/AuditScope"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/audit-events": {
+			"get": {
+				"operationId": "ListEventAuditEvents",
+				"responses": {
+					"200": {
+						"description": "Audit entries",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuditEventPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The event's audit entries, newest first. Requires `audit.read` for the event.",
+				"tags": [
+					"Audit"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "Part of the action, target type or target ID.",
+						"in": "query",
+						"name": "search",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"maxLength": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "result",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/AuditResult"
+						}
+					}
+				]
 			}
 		},
 		"/api-clients": {
