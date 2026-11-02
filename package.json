@@ -80,5 +80,10 @@
     "api-client",
     "sdk",
     "typescript"
-  ]
+  ],
+  "pnpm": {
+    "overrides": {
+      "minimatch": "11.0.3"
+    }
+  }
 }
